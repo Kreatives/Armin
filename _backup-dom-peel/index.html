@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="nl" class="hero-loading">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Armin Shah</title>
+
+  <!-- Critical CSS: verberg de hero tot fonts + eerste frame klaar zijn (geen flits / geen shift) -->
+  <style>
+    html.hero-loading body { background: #EBEBEB; }
+    html.hero-loading .hero { visibility: hidden; }
+  </style>
+
+  <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+  <link rel="stylesheet" href="https://use.typekit.net/far7gpv.css" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero" id="hero" aria-label="Armin Shah — diensten">
+
+      <!-- Titel + meta -->
+      <div class="hero__frame">
+        <h1 class="hero__title" data-fit-text>ARMIN SHAH</h1>
+        <div class="hero__meta">
+          <span class="hero__meta-item">2026</span>
+          <span class="hero__meta-item hero__meta-item--right">Lorem Ipsum</span>
+        </div>
+      </div>
+
+      <!-- Persoon + objecten -->
+      <div class="stage" data-stage>
+        <!-- Service-objecten: liggen achter het hoofd-onderstuk -->
+        <div class="services" data-services></div>
+
+        <!-- Image sequence -->
+        <canvas class="stage__canvas" data-canvas></canvas>
+
+        <!-- Hoofd: één clip-container met drie gestapelde beelden + peel-kapje -->
+        <div class="head" data-head>
+          <div class="head__base" data-head-base>
+            <img class="head__img is-active" data-head-img="default" src="assets/head/default.webp" alt="" draggable="false" />
+            <img class="head__img" data-head-img="top" src="assets/head/top.webp" alt="" draggable="false" />
+            <img class="head__img" data-head-img="bottom" src="assets/head/bottom.webp" alt="" draggable="false" />
+          </div>
+
+          <!-- Slagschaduw van de omgekrulde flap (blur), onder het kapje -->
+          <div class="head__peel-shadow" data-peel-shadow aria-hidden="true"></div>
+
+          <!-- Kapje = papier-flap die omkrult; rotateX via --fold -->
+          <div class="head__cap" data-head-cap>
+            <div class="head__fold" data-head-fold>
+              <img class="head__img is-active" src="assets/head/default.webp" alt="" draggable="false" />
+              <!-- Onderkant van het omgekrulde papier: donker -> wit (4 stops) -->
+              <div class="head__fold-sheen" data-fold-sheen aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mobiele navigatie: pijlen op ooghoogte -->
+        <button class="head-nav head-nav--prev" data-nav="prev" type="button" aria-label="Vorige dienst">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="head-nav head-nav--next" data-nav="next" type="button" aria-label="Volgende dienst">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+
+      <!-- Donkere overlay + bodytekst -->
+      <div class="hero__overlay" aria-hidden="true"></div>
+      <p class="hero__body">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
+        ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.
+      </p>
+
+      <!-- Loader tijdens preload -->
+      <div class="hero__loader" data-loader aria-hidden="true">
+        <span class="hero__loader-bar"><span class="hero__loader-fill" data-loader-fill></span></span>
+      </div>
+
+      <!-- Pill die de cursor volgt bij hover over een object -->
+      <div class="cursor-pill" data-cursor-pill aria-hidden="true"></div>
+    </section>
+
+    <!-- Screenreader-navigatie -->
+    <nav class="sr-only" aria-label="Diensten">
+      <ul>
+        <li><a href="/diensten/creative-strategy">Creative Strategy</a></li>
+        <li><a href="/diensten/format-ip-development">Format &amp; IP Development</a></li>
+        <li><a href="/diensten/football-culture-consultancy">Football &amp; Culture Consultancy</a></li>
+        <li><a href="/diensten/creative-direction-production">Creative Direction &amp; Production</a></li>
+        <li><a href="/diensten/partnerships-cultural-connections">Partnerships &amp; Cultural Connections</a></li>
+      </ul>
+    </nav>
+  </main>
+
+  <!-- SVG-filters: inner shadow op titel + rafelige textuur op papierrand -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="title-inner-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feOffset in="SourceAlpha" dx="0" dy="5" result="off" />
+        <feGaussianBlur in="off" stdDeviation="4" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="out" result="inverse" />
+        <feFlood flood-color="#A84E1B" flood-opacity="0.85" result="color" />
+        <feComposite in="color" in2="inverse" operator="in" result="shadow" />
+        <feComposite in="shadow" in2="SourceGraphic" operator="over" />
+      </filter>
+
+    </defs>
+  </svg>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" class="hero-loading">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Armin Shah</title>
+
+  <!-- Critical CSS: verberg de hero tot fonts + eerste frame klaar zijn (geen flits / geen shift) -->
+  <style>
+    html.hero-loading body { background: #EBEBEB; }
+    html.hero-loading .hero { visibility: hidden; }
+  </style>
+
+  <link rel="preconnect" href="https://use.typekit.net" crossorigin />
+  <link rel="stylesheet" href="https://use.typekit.net/far7gpv.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="preloader" data-preloader>
+    <span class="preloader__num" data-preloader-num>0</span>
+  </div>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="grid-lines" aria-hidden="true"></div>
+  <main class="page">
+    <section class="hero" id="hero" aria-label="Armin Shah, services">
+
+      <!-- Titel -->
+      <div class="hero__frame">
+        <h1 class="hero__title" data-fit-text>ARMIN SHAH</h1>
+      </div>
+
+      <!-- Persoon + objecten -->
+      <div class="stage" data-stage>
+        <!-- Service-objecten: liggen achter het hoofd-onderstuk -->
+        <div class="services" data-services></div>
+
+        <!-- Image sequence -->
+        <canvas class="stage__canvas" data-canvas></canvas>
+
+        <!-- Hoofd: onderstuk (blijft) + bovenstuk (krult weg via OGL WebGL-curl) -->
+        <div class="head" data-head>
+          <!-- Onderstuk (blijft staan) met witte sticker-outline -->
+          <div class="head__still" data-head-still>
+            <img class="head__img" src="assets/head/head-bottom.webp" alt="" draggable="false" />
+          </div>
+          <!-- WebGL page-curl van het bovenstuk (rolt op + vliegt weg) -->
+          <canvas class="head__curl" data-curl-canvas aria-hidden="true"></canvas>
+        </div>
+
+        <!-- Navigatie: vorige/volgende dienst (rechtsonder) -->
+        <div class="hero-arrows">
+          <button class="head-nav head-nav--prev" data-nav="prev" type="button" aria-label="Vorige dienst">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="head-nav head-nav--next" data-nav="next" type="button" aria-label="Volgende dienst">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Donkere overlay + bodytekst -->
+      <div class="hero__overlay" aria-hidden="true"></div>
+      <p class="hero__body">
+        Award-winning creative strategist and storyteller working across football and culture.
+      </p>
+
+      <!-- Loader tijdens preload -->
+      <div class="hero__loader" data-loader aria-hidden="true">
+        <span class="hero__loader-bar"><span class="hero__loader-fill" data-loader-fill></span></span>
+      </div>
+
+      <!-- Pill die de cursor volgt bij hover over een object -->
+      <div class="cursor-pill" data-cursor-pill aria-hidden="true"></div>
+    </section>
+
+    <!-- 2. Logo marquee ------------------------------------ -->
+    <section class="marquee" aria-label="Worked with">
+      <div class="marquee__viewport">
+        <div class="marquee__track" data-marquee></div>
+      </div>
+    </section>
+
+    <!-- 3. Over Armin (korte intro — eerste sectie na de hero) -->
+    <section class="about-v1" id="over-armin">
+      <div class="about-v1__inner">
+        <div class="about-v1__flex">
+          <div class="about-v1__left"><div class="about-v1__label">About</div></div>
+          <div class="about-v1__copy">
+            <h3 class="about-v1__hl" data-highlight>Armin Shah is an award-winning creative strategist and storyteller working at the intersection of football and culture. He develops ideas, formats and stories that connect brands, athletes and audiences through culture.</h3>
+            <p class="about-v1__text" data-reveal>Over the past decade, his work has evolved from independent media into collaborations with some of the biggest names in sports, media and culture, always guided by the same approach: understanding culture first, then creating something that belongs within it.</p>
+          </div>
+        </div>
+        <div class="about-v1__wrap">
+          <div class="about-v1__imgs">
+            <img class="about-v1__media" src="assets/about/armin-1.jpeg" alt="Armin Shah in the Kick 't Met studio" loading="lazy" />
+            <img class="about-v1__media" src="assets/about/armin-2.jpg" alt="Armin Shah during a talkshow recording" loading="lazy" />
+          </div>
+          <div class="about-v1__btm">
+            <p class="about-v1__caption">Football and culture, as one story</p>
+            <a class="btn-primary" href="about.html">More about Armin →</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. Werk / cases ------------------------------------ -->
+    <section class="work" id="werk" aria-label="Work">
+      <div class="work__head">
+        <h2 class="work__title" data-reveal>Cases</h2>
+        <button class="btn-pill" type="button" data-open-diensten data-reveal>View all cases</button>
+      </div>
+      <div class="ring-stage work__ring" data-cases-ring aria-label="Cases carousel"></div>
+      <div class="work__arrows">
+        <button class="c-arrow" type="button" data-work-prev aria-label="Vorige case">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="c-arrow" type="button" data-work-next aria-label="Volgende case">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </section>
+
+    <!-- 5. Over Armin — uitgebreid (ervaring, hoogtepunten, merken) -->
+    <section class="about" id="ervaring" aria-label="About Armin">
+      <div class="about__inner">
+
+        <!-- Intro: grote highlight-tekst + portret -->
+        <div class="about__intro">
+          <div class="about__lead">
+            <p class="about__label" data-reveal>about</p>
+            <h2 class="about__title" data-highlight data-hl-color="#F7F5F0">Armin Shah works where football and culture meet. As a creative strategist and storyteller he builds ideas and formats that stay with people, from talkshow to podcast, from brand to generation.</h2>
+            <div class="about__meta" data-reveal>
+              <p class="about__meta-item"><span class="about__mark">A</span> Creative strategist &amp; storyteller</p>
+              <p class="about__meta-item">Amsterdam, NL</p>
+            </div>
+          </div>
+          <div class="about__portrait" data-reveal>
+            <img src="assets/about/armin-3.jpeg" alt="Portrait of Armin Shah on the red carpet" loading="lazy" />
+          </div>
+        </div>
+
+        <!-- Ervaring -->
+        <div class="about__info">
+          <p class="about__label" data-reveal>Experience</p>
+          <div class="about__list">
+            <div class="about__row" data-reveal><h3>Creator, Producer &amp; Host</h3><h3>Ziggo Sport</h3><h3>2023 — present</h3></div>
+            <div class="about__row" data-reveal><h3>Co-Founder &amp; Creator</h3><h3>The Legacy Show</h3><h3>2025 — present</h3></div>
+            <div class="about__row" data-reveal><h3>Founder, Creator &amp; Host</h3><h3>CONVO</h3><h3>2017 — present</h3></div>
+            <div class="about__row" data-reveal><h3>Creative Director, Benelux</h3><h3>Complex Networks</h3><h3>2021 — 2023</h3></div>
+          </div>
+        </div>
+
+        <!-- Highlights -->
+        <div class="about__info">
+          <p class="about__label" data-reveal>Highlights</p>
+          <div class="about__list">
+            <div class="about__row about__row--2" data-reveal><h3>Years across the creative industries</h3><h3>10+</h3></div>
+            <div class="about__row about__row--2" data-reveal><h3>Industries worked across</h3><h3>5</h3></div>
+            <div class="about__row about__row--2" data-reveal><h3>CONVO — episodes</h3><h3>100+</h3></div>
+            <div class="about__row about__row--2" data-reveal><h3>Brand collaborations</h3><h3>25+</h3></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 6. Nieuwsbrief CTA --------------------------------- -->
+    <section class="newsletter" id="nieuwsbrief">
+      <div class="newsletter__inner">
+        <h2 class="newsletter__title" data-reveal>Stay in the loop</h2>
+        <p class="newsletter__body" data-reveal>New cases, ideas and collaborations straight to your inbox.</p>
+        <form class="newsletter__form" data-newsletter novalidate>
+          <input class="newsletter__input" type="email" name="email" placeholder="Your email address" required aria-label="Email address" />
+          <button class="newsletter__btn" type="submit">Subscribe</button>
+        </form>
+        <p class="newsletter__note" data-newsletter-note role="status"></p>
+      </div>
+    </section>
+
+    <!-- 7. Contact / footer -------------------------------- -->
+    <footer class="contact" id="contact">
+      <div class="contact__inner">
+        <div class="contact__cols">
+          <div class="contact__col" data-reveal>
+            <p class="contact__label">Contact</p>
+            <a class="contact__link contact__link--lg" href="mailto:hello@arminshah.nl">hello@arminshah.nl</a>
+            <a class="contact__link contact__link--lg" href="https://wa.me/31612345678">+31 6 12 34 56 78 (WhatsApp)</a>
+          </div>
+          <div class="contact__col" data-reveal>
+            <p class="contact__label">Pages</p>
+            <a class="contact__link" href="#hero">Home</a>
+            <a class="contact__link" href="#werk">Work</a>
+            <a class="contact__link" href="about.html">About</a>
+            <a class="contact__link" href="#nieuwsbrief">Newsletter</a>
+          </div>
+          <div class="contact__col" data-reveal>
+            <p class="contact__label">Socials</p>
+            <a class="contact__link" href="#" rel="noopener">Instagram</a>
+            <a class="contact__link" href="#" rel="noopener">LinkedIn</a>
+            <a class="contact__link" href="#" rel="noopener">YouTube</a>
+          </div>
+          <div class="contact__col" data-reveal>
+            <p class="contact__label">Based in</p>
+            <p class="contact__link">Armin Shah</p>
+            <p class="contact__link">Amsterdam, NL</p>
+          </div>
+        </div>
+        <div class="contact__divider"></div>
+        <p class="contact__copy">© 2026 Armin Shah</p>
+      </div>
+      <div class="contact__wordmark" aria-hidden="true">ARMIN SHAH</div>
+    </footer>
+
+    <!-- Fullscreen diensten-overlay (opent via 'Bekijk alle cases') -->
+    <div class="diensten" id="diensten" aria-hidden="true">
+      <div class="diensten__bg" data-diensten-bg aria-hidden="true"></div>
+      <img class="diensten__brandlogo" data-diensten-logo alt="" aria-hidden="true" />
+      <button class="diensten__back" type="button" data-diensten-close>← Back to home</button>
+      <div class="diensten__cards" data-diensten-cards aria-hidden="true"></div>
+      <div class="diensten__reel" data-diensten-reel></div>
+      <div class="diensten__menu" data-diensten-menu role="tablist" aria-label="Kies een dienst"></div>
+      <p class="diensten__hint" aria-hidden="true">Scroll for the next case</p>
+    </div>
+
+    <!-- Screenreader-navigatie -->
+    <nav class="sr-only" aria-label="Services">
+      <ul>
+        <li><a href="/diensten/creative-strategy">Creative Strategy</a></li>
+        <li><a href="/diensten/format-ip-development">Format &amp; IP Development</a></li>
+        <li><a href="/diensten/football-culture-consultancy">Football &amp; Culture Consultancy</a></li>
+        <li><a href="/diensten/creative-direction-production">Creative Direction &amp; Production</a></li>
+        <li><a href="/diensten/partnerships-cultural-connections">Partnerships &amp; Cultural Connections</a></li>
+      </ul>
+    </nav>
+  </main>
+
+  <!-- SVG-filters: inner shadow op titel + rafelige textuur op papierrand -->
+  <svg class="svg-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="title-inner-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feOffset in="SourceAlpha" dx="0" dy="5" result="off" />
+        <feGaussianBlur in="off" stdDeviation="4" result="blur" />
+        <feComposite in="SourceGraphic" in2="blur" operator="out" result="inverse" />
+        <feFlood flood-color="#A84E1B" flood-opacity="0.85" result="color" />
+        <feComposite in="color" in2="inverse" operator="in" result="shadow" />
+        <feComposite in="shadow" in2="SourceGraphic" operator="over" />
+      </filter>
+
+    </defs>
+  </svg>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script type="module" src="curl.js"></script>
+  <script src="cases.js"></script>
+  <script src="script.js" defer></script>
+</body>
+</html>

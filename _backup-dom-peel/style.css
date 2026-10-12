@@ -1,0 +1,405 @@
+/* =========================================================
+   Armin Shah — hero
+   1. Reset  2. Tokens  3. Base  4. Hero-frame (titel/meta)
+   5. Stage (persoon + objecten)  6. Services  7. Overlay/body
+   8. Loader  9. Mobiel  10. Debug  11. Reduced motion
+   ========================================================= */
+
+/* 1. Reset ------------------------------------------------ */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; }
+
+/* 2. Tokens ----------------------------------------------- */
+:root {
+  /* Kleuren */
+  --bg: #EBEBEB;
+  --orange: #D9702F;
+  --orange-deep: #A84E1B;
+  --paper: #F7F5F0;
+  --ink: #111111;
+
+  /* Fonts — Nexa (Adobe Typekit). Extra Bold (700) voor de titel, Book (400) voor de rest. */
+  --font-display: 'nexa', system-ui, sans-serif;
+  --font-body: 'nexa', system-ui, sans-serif;
+
+  /* Ritme */
+  --edge: 4vw;                    /* content-padding links/rechts */
+  --meta-size: clamp(0.9rem, 2.4vw, 1.6rem);
+  --body-size: 1.125rem;         /* 18px */
+
+  /* Stage */
+  --head-aspect: 16 / 9;         /* = bron-verhouding van sequence + heads */
+  --pill-bg: var(--paper);
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 3. Base ------------------------------------------------- */
+body {
+  font-family: var(--font-body);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+.svg-defs { position: absolute; }
+
+/* 4. Hero + titel/meta ------------------------------------ */
+.hero {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.hero__frame {
+  position: absolute;
+  inset: 0 var(--edge) auto var(--edge);
+  top: clamp(1.5rem, 4vh, 3rem);
+  z-index: 1;                     /* achter de persoon */
+  pointer-events: none;
+}
+
+.hero__title {
+  display: inline-block;         /* zodat fit-text de tekstbreedte meet, niet de blokbreedte */
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;              /* Nexa Extra Bold */
+  color: var(--orange);
+  text-transform: uppercase;
+  line-height: 0.82;
+  letter-spacing: 0.005em;
+  white-space: nowrap;
+  /* inner shadow (SVG) + zachte oranje gloed eromheen */
+  filter: url(#title-inner-shadow) drop-shadow(0 0 12px rgba(217, 112, 47, 0.55));
+  font-size: 12vw;               /* start; JS schaalt naar exacte breedte */
+}
+
+/* GSAP text reveal: chars klimmen uit hun woord-masker omhoog */
+.hero__title .word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-block: 0.12em;
+  margin-block: -0.12em;
+}
+.hero__title .word + .word { margin-inline-start: 0.28em; }
+.hero__title .char { display: inline-block; will-change: transform; }
+
+.hero__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 0.4em;
+  color: var(--orange);
+  font-weight: 400;              /* Nexa Book */
+  font-size: var(--meta-size);
+  letter-spacing: 0.02em;
+}
+.hero__meta-item--right { text-transform: uppercase; }
+
+/* 5. Stage: persoon + objecten ---------------------------- */
+.stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Canvas, hoofd én objecten-container delen exact dezelfde box: onderaan gecentreerd.
+   Zo staan de objectposities in % van de head-container. */
+.stage__canvas,
+.head,
+.services {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  height: 100%;
+  aspect-ratio: var(--head-aspect);
+  max-width: none;
+}
+
+.stage__canvas { z-index: 10; }
+
+.head {
+  z-index: 11;
+  visibility: hidden;            /* pas zichtbaar na de swap */
+  perspective: 1400px;           /* voor de 3D-peel van het kapje */
+  --tear-y: 30%;                 /* hoogte van de scheurlijn (via JS uit TEAR.baseY) */
+}
+
+/* Clip-containers, allemaal gestapeld op exact dezelfde box */
+.head__base,
+.head__cap,
+.head__fold {
+  position: absolute;
+  inset: 0;
+}
+
+.head__base {
+  /* sticker-outline (gestapelde witte drop-shadows, geen blur) + één zachte slagschaduw */
+  filter:
+    drop-shadow(  8px 0 0 var(--paper)) drop-shadow( -8px 0 0 var(--paper))
+    drop-shadow(0  8px 0 var(--paper))  drop-shadow(0  -8px 0 var(--paper))
+    drop-shadow(  6px  6px 0 var(--paper)) drop-shadow( -6px  6px 0 var(--paper))
+    drop-shadow(  6px -6px 0 var(--paper)) drop-shadow( -6px -6px 0 var(--paper))
+    drop-shadow(0 22px 26px rgba(0, 0, 0, 0.32));
+  /* clip-path wordt via JS gezet (url(#tear-clip-base)) */
+}
+
+/* Head-beelden: identiek gestapeld, alleen opacity wisselt (crossfade 200ms) */
+.head__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom center;
+  opacity: 0;
+  transition: opacity 0.2s linear;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.head__img.is-active { opacity: 1; }
+
+/* Peel-kapje: papier-flap die omkrult via rotateX(--fold) rond de scheurlijn */
+.head__cap {
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+.head__fold {
+  transform-origin: 50% var(--tear-y);
+  transform: rotateX(var(--fold, 0deg));
+  /* clip-path (boven de scheur) wordt via JS gezet: url(#tear-clip-cap) */
+}
+/* Onderkant van het omgekrulde papier: vier stops donker -> wit.
+   Beperkt tot het silhouet van het hoofd, zodat het NOOIT full-width over het scherm loopt. */
+.head__fold-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, #141210 0%, #4a453d 30%, #b9b2a4 66%, var(--paper) 100%);
+  opacity: 0;                    /* GSAP animeert mee met --fold */
+  pointer-events: none;
+  -webkit-mask-image: url('assets/head/default.webp');
+  mask-image: url('assets/head/default.webp');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+/* Slagschaduw van de flap op het onderstuk, met blur, beperkt tot het hoofd */
+.head__peel-shadow {
+  position: absolute;
+  left: 0; right: 0;
+  top: calc(var(--tear-y) - 8%);
+  height: 22%;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0) 70%);
+  filter: blur(16px);
+  opacity: 0;                    /* GSAP animeert mee met --fold */
+  pointer-events: none;
+  -webkit-mask-image: url('assets/head/default.webp');
+  mask-image: url('assets/head/default.webp');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* 6. Service-objecten ------------------------------------- */
+.services { z-index: 5; }        /* altijd achter het hoofd (head = z 11) */
+
+.service {
+  position: absolute;
+  display: block;
+  width: var(--w, 18%);
+  left: var(--x, 50%);
+  top: var(--y, 0%);
+  translate: -50% 0;
+  transform: rotate(var(--r, 0deg));
+  transform-origin: 50% 50%;     /* zelfde draaipunt als de hit-test verwacht */
+  opacity: 0;                    /* start verborgen; GSAP toont ze in fase C */
+  will-change: transform;
+  outline: none;
+}
+.service img {
+  width: 100%;
+  height: auto;
+  opacity: 1;
+  pointer-events: none;         /* hit-test gebeurt via alpha, niet de bbox */
+  filter: none;                 /* geen shadow/waas op de objecten */
+}
+
+/* Cursor-pill: volgt de muis bij hover over een object */
+.cursor-pill {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: 50;
+  padding: 12px 22px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.18s var(--ease-out);
+}
+.cursor-pill.is-visible { opacity: 1; }
+
+/* 7. Overlay + bodytekst ---------------------------------- */
+.hero__overlay {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 34%;
+  z-index: 20;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.85) 70%, #000 100%);
+  pointer-events: none;
+}
+
+.hero__body {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.75rem, 5vh, 3.5rem);
+  translate: -50% 0;
+  z-index: 21;
+  width: min(900px, calc(100% - 2 * var(--edge)));
+  margin: 0;
+  text-align: center;
+  color: #fff;
+  font-weight: 400;
+  font-size: var(--body-size);
+  line-height: 1.6;
+}
+
+/* 8. Loader ----------------------------------------------- */
+.hero__loader {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.75rem, 5vh, 3.5rem);
+  translate: -50% 0;
+  z-index: 40;
+  transition: opacity 0.4s var(--ease-out);
+}
+.hero__loader.is-done { opacity: 0; pointer-events: none; }
+.hero__loader-bar {
+  display: block;
+  width: 160px;
+  height: 2px;
+  background: rgba(17, 17, 17, 0.15);
+  overflow: hidden;
+}
+.hero__loader-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  background: var(--orange);
+}
+
+/* 9. Mobiele navigatie ------------------------------------ */
+.head-nav {
+  position: absolute;
+  top: 50%;
+  translate: 0 -50%;
+  z-index: 22;
+  display: none;                 /* alleen op mobiel */
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--ink);
+  border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.head-nav svg { width: 24px; height: 24px; margin: auto; }
+.head-nav--prev { left: var(--edge); }
+.head-nav--next { right: var(--edge); }
+
+/* 10. Debug ----------------------------------------------- */
+.debug .service {
+  outline: 1px solid rgba(229, 0, 125, 0.9);
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+.debug .service::after {           /* slug-label per object */
+  content: attr(data-slug);
+  position: absolute;
+  left: 50%; top: 0;
+  translate: -50% -100%;
+  font: 600 11px/1.2 var(--font-body);
+  color: #fff;
+  background: #e5007d;
+  padding: 2px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.debug .service img { filter: none; }
+.debug .head { visibility: visible !important; opacity: 1 !important; } /* toon hoofd + scheurlijn */
+.debug .head__base { outline: 1px dashed rgba(0, 128, 255, 0.6); }
+.debug .head__cap { display: none; }        /* open hoofd tonen voor het tunen */
+.debug .stage__canvas { display: none; }
+.debug-tearline {                  /* horizontale referentielijn op de scheurhoogte */
+  position: absolute;
+  left: 0; right: 0;
+  height: 0;
+  border-top: 1px dashed #00e5ff;
+  z-index: 61;
+  pointer-events: none;
+}
+.debug-tearline::after {
+  content: 'scheurrand';
+  position: absolute;
+  left: 6px; top: 2px;
+  font: 600 11px/1.2 var(--font-body);
+  color: #0097a7;
+}
+.debug-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+}
+
+/* Mobiel < 768px ------------------------------------------ */
+@media (max-width: 767px) {
+  .hero__frame { top: clamp(1rem, 3vh, 2rem); }
+  .hero__title { line-height: 0.86; }
+
+  /* Persoon: hoogte-gebaseerd en horizontaal gecentreerd (16:9 bron loopt links/rechts buiten beeld) */
+  .stage__canvas, .head, .services {
+    height: 66%;
+    width: auto;
+    aspect-ratio: var(--head-aspect);
+    bottom: 13%;
+  }
+  .head-nav { display: flex; }
+  .cursor-pill { font-size: 14px; padding: 10px 18px; }
+  .hero__body { font-size: 1rem; }
+}
+
+/* 11. Reduced motion — eindstaat, geen animatie ----------- */
+@media (prefers-reduced-motion: reduce) {
+  .hero__loader { display: none; }
+  .stage__canvas { display: none; }
+  .head { visibility: visible; }
+  .head__cap { display: none; }
+  .service { opacity: 1; }
+}
