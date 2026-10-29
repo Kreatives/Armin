@@ -1,27 +1,33 @@
 /* =========================================================
-   Content editor — Supabase Auth + tekst-editor + cases-CMS.
+   Content editor — Supabase Auth + tekst-editor + media + cases.
    ========================================================= */
 const cfg = window.CMS_CONFIG;
 const TEXTS = cfg.tables.texts;
 const CASES = cfg.tables.cases;
+const MEDIA = cfg.tables.media;
+const BUCKET = cfg.bucket;
 const M = window.CMS_MANIFEST;
-let sb = null;             // wordt gezet zodra Supabase geladen is
+const MEDIA_M = window.CMS_MEDIA;
+let sb = null;
 
-// --- DOM-shortcuts -----------------------------------------------------
 const $ = (sel) => document.querySelector(sel);
 const loginBox = $('#login');
 const appBox = $('#app');
+const navEl = $('#nav');
+const headEl = $('#main-head');
 const panel = $('#panel');
-const tabsEl = $('#tabs');
 
-// Cache van opgehaalde pagina-HTML (voor de originele teksten).
 const docCache = {};
-let overrides = {};        // { key: value } uit site_texts
-let activeTab = null;
-const pending = new Map(); // key -> { value, baseline } : niet-opgeslagen tekst-wijzigingen
+let overrides = {};        // site_texts
+let mediaOverrides = {};   // site_media
+let activeTab = null;      // page id of 'cases'
+let activeView = 'tekst';  // 'tekst' | 'media'
+const pending = new Map(); // niet-opgeslagen tekst-wijzigingen
 let saveBar = null;
 
-// --- Fouten altijd zichtbaar maken (nooit een blanco scherm) -----------
+// ---------------------------------------------------------------------
+//  Fouten altijd zichtbaar
+// ---------------------------------------------------------------------
 function fatal(msg) {
   if (loginBox) loginBox.hidden = false;
   if (appBox) appBox.hidden = true;
@@ -32,7 +38,6 @@ function fatal(msg) {
 window.addEventListener('error', (e) => fatal('Scriptfout: ' + (e.message || e.error)));
 window.addEventListener('unhandledrejection', (e) => fatal('Fout: ' + (e.reason?.message || e.reason)));
 
-// --- Supabase laden en starten -----------------------------------------
 (async function start() {
   try {
     const mod = await import('https://esm.sh/@supabase/supabase-js@2');
@@ -44,15 +49,12 @@ window.addEventListener('unhandledrejection', (e) => fatal('Fout: ' + (e.reason?
   boot();
 })();
 
-// =====================================================================
+// ---------------------------------------------------------------------
 //  Auth
-// =====================================================================
+// ---------------------------------------------------------------------
 let appStarted = false;
 
 async function boot() {
-  // Belangrijk: binnen onAuthStateChange GEEN supabase-queries await'en
-  // (dat kan vastlopen door de interne auth-lock). We tonen hier alleen de
-  // juiste weergave en starten het dataladen los via setTimeout.
   sb.auth.onAuthStateChange((_e, session) => {
     if (session) { revealApp(session.user); setTimeout(initApp, 0); }
     else { appStarted = false; showLogin(); }
@@ -67,19 +69,17 @@ function showLogin() {
   pending.clear();
   if (saveBar) saveBar.hidden = true;
 }
-
 function revealApp(user) {
   loginBox.hidden = true;
   appBox.hidden = false;
   $('#user-email').textContent = user?.email || '';
 }
-
 async function initApp() {
-  if (appStarted) return;          // voorkom dubbel laden
+  if (appStarted) return;
   appStarted = true;
   try {
     await loadData();
-    buildTabs();
+    buildNav();
     selectTab(activeTab || M.pages[0].id);
   } catch (e) {
     appStarted = false;
@@ -89,8 +89,7 @@ async function initApp() {
 
 $('#login-form').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const btn = $('#login-btn');
-  const err = $('#login-error');
+  const btn = $('#login-btn'), err = $('#login-error');
   err.textContent = '';
   if (!sb) { err.textContent = 'Nog bezig met laden, probeer het zo opnieuw.'; return; }
   btn.disabled = true; btn.textContent = 'Bezig…';
@@ -100,27 +99,30 @@ $('#login-form').addEventListener('submit', async (e) => {
   });
   btn.disabled = false; btn.textContent = 'Inloggen';
   if (error) {
-    err.textContent = error.message && /email not confirmed/i.test(error.message)
-      ? 'Dit account is nog niet bevestigd. Maak de user aan met "Auto Confirm User" aan, of bevestig het in Supabase.'
+    err.textContent = /email not confirmed/i.test(error.message || '')
+      ? 'Dit account is nog niet bevestigd. Maak de user aan met "Auto Confirm User" aan.'
       : 'Inloggen mislukt: ' + (error.message || 'onbekende fout');
     return;
   }
-  // Direct tonen (niet alleen leunen op het auth-event).
   if (data?.user) { revealApp(data.user); setTimeout(initApp, 0); }
 });
 
 $('#logout-btn').addEventListener('click', () => sb.auth.signOut());
 
-// =====================================================================
+// ---------------------------------------------------------------------
 //  Data
-// =====================================================================
+// ---------------------------------------------------------------------
 async function loadData() {
-  const { data, error } = await sb.from(TEXTS).select('key,value');
+  const [t, md] = await Promise.all([
+    sb.from(TEXTS).select('key,value'),
+    sb.from(MEDIA).select('key,url'),
+  ]);
   overrides = {};
-  if (!error && data) data.forEach((r) => { overrides[r.key] = r.value; });
+  (t.data || []).forEach((r) => { overrides[r.key] = r.value; });
+  mediaOverrides = {};
+  (md.data || []).forEach((r) => { mediaOverrides[r.key] = r.url; });
 }
 
-// Haal (en cache) de live pagina-HTML op om de originele teksten te lezen.
 async function getDoc(file) {
   if (docCache[file]) return docCache[file];
   const res = await fetch('../' + file, { cache: 'no-store' });
@@ -129,70 +131,150 @@ async function getDoc(file) {
   docCache[file] = doc;
   return doc;
 }
-
-// Originele tekst + of het veld gevonden is.
 async function baselineFor(field, file) {
   if (field.mode === 'virtual') return { text: field.default || '', found: true };
   const doc = await getDoc(file);
   let el = null;
-  try { el = doc.querySelector(field.selector); } catch (_) { /* ongeldige selector */ }
+  try { el = doc.querySelector(field.selector); } catch (_) {}
   if (!el) return { text: '', found: false };
   return { text: window.CMS.readField(el, field.mode), found: true };
 }
-
-// =====================================================================
-//  Tabs
-// =====================================================================
-function buildTabs() {
-  tabsEl.innerHTML = '';
-  M.pages.forEach((p) => tabsEl.appendChild(makeTab(p.id, p.label)));
-  tabsEl.appendChild(makeTab('cases', 'Cases'));
+async function mediaBaseline(item, file) {
+  const doc = await getDoc(file);
+  let el = null;
+  try { el = doc.querySelector(item.selector); } catch (_) {}
+  if (!el) return null;
+  return item.attr === 'src' ? (el.getAttribute('src') || '') : (el.getAttribute(item.attr) || '');
 }
-function makeTab(id, label) {
+
+// Toon een pad correct in de editor (relatief pad -> één map omhoog).
+const displaySrc = (v) => (!v ? '' : (/^https?:\/\//.test(v) || v.startsWith('data:')) ? v : '../' + v.replace(/^\.?\//, ''));
+
+// ---------------------------------------------------------------------
+//  Navigatie (sidebar)
+// ---------------------------------------------------------------------
+const ICONS = {
+  page: '<svg class="nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/></svg>',
+  grid: '<svg class="nav__ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+};
+function buildNav() {
+  navEl.innerHTML = '';
+  const g1 = document.createElement('div');
+  g1.className = 'nav__group';
+  g1.innerHTML = '<div class="nav__title">Pagina’s</div>';
+  M.pages.forEach((p) => g1.appendChild(navItem(p.id, p.label, ICONS.page)));
+  const g2 = document.createElement('div');
+  g2.className = 'nav__group';
+  g2.innerHTML = '<div class="nav__title">Content</div>';
+  g2.appendChild(navItem('cases', 'Cases', ICONS.grid));
+  navEl.append(g1, g2);
+}
+function navItem(id, label, ico) {
   const b = document.createElement('button');
-  b.className = 'tab';
-  b.textContent = label;
+  b.className = 'nav__item';
   b.dataset.id = id;
+  b.innerHTML = ico + '<span>' + label + '</span>';
   b.addEventListener('click', () => selectTab(id));
   return b;
 }
-function selectTab(id) {
-  if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
-  pending.clear();
-  updateSaveBar();
-  activeTab = id;
-  [...tabsEl.children].forEach((t) => t.classList.toggle('is-active', t.dataset.id === id));
-  if (id === 'cases') renderCases();
-  else renderTextPage(M.pages.find((p) => p.id === id));
+function highlightNav() {
+  [...navEl.querySelectorAll('.nav__item')].forEach((b) => b.classList.toggle('is-active', b.dataset.id === activeTab));
 }
 
-// =====================================================================
+function hasMedia(id) { return !!(MEDIA_M && MEDIA_M.pages[id]); }
+function pageById(id) { return M.pages.find((p) => p.id === id); }
+
+function previewUrl(id) {
+  if (id === 'about') return '../about.html';
+  if (id === 'case') return '../case.html';
+  if (id === 'footer') return '../index.html#contact';
+  return '../index.html';
+}
+
+function selectTab(id) {
+  if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
+  pending.clear(); updateSaveBar();
+  activeTab = id;
+  activeView = 'tekst';
+  highlightNav();
+  renderHeader();
+  renderBody();
+}
+function setView(v) {
+  if (v === activeView) return;
+  if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
+  pending.clear(); updateSaveBar();
+  activeView = v;
+  renderHeader();
+  renderBody();
+}
+
+function renderHeader() {
+  headEl.innerHTML = '';
+  const title = document.createElement('h1');
+  title.className = 'head__title';
+  const right = document.createElement('div');
+  right.className = 'head__right';
+
+  if (activeTab === 'cases') {
+    title.textContent = 'Cases';
+    const add = document.createElement('button');
+    add.className = 'btn btn--primary btn--sm';
+    add.textContent = '+ Nieuwe case';
+    add.addEventListener('click', addCase);
+    right.appendChild(add);
+  } else {
+    const page = pageById(activeTab);
+    title.textContent = page.label;
+    if (hasMedia(activeTab)) {
+      const seg = document.createElement('div');
+      seg.className = 'seg';
+      ['tekst', 'media'].forEach((v) => {
+        const b = document.createElement('button');
+        b.className = 'seg__btn' + (activeView === v ? ' is-active' : '');
+        b.textContent = v === 'tekst' ? 'Tekst' : 'Media';
+        b.addEventListener('click', () => setView(v));
+        seg.appendChild(b);
+      });
+      right.appendChild(seg);
+    }
+    const prev = document.createElement('a');
+    prev.className = 'btn btn--ghost btn--sm';
+    prev.href = previewUrl(activeTab);
+    prev.target = '_blank';
+    prev.rel = 'noopener';
+    prev.textContent = 'Bekijk pagina ↗';
+    right.appendChild(prev);
+  }
+  headEl.append(title, right);
+}
+
+function renderBody() {
+  if (activeTab === 'cases') return renderCases();
+  if (activeView === 'media' && hasMedia(activeTab)) return renderMediaPage(activeTab);
+  return renderTextPage(pageById(activeTab));
+}
+
+// ---------------------------------------------------------------------
 //  Tekst-editor
-// =====================================================================
+// ---------------------------------------------------------------------
 async function renderTextPage(page) {
   panel.innerHTML = '<div class="loading">Teksten laden…</div>';
   const frag = document.createDocumentFragment();
-
   if (page.note) {
     const n = document.createElement('div');
-    n.className = 'note';
-    n.textContent = page.note;
+    n.className = 'note'; n.textContent = page.note;
     frag.appendChild(n);
   }
-
   for (const section of page.sections) {
     const sec = document.createElement('section');
     sec.className = 'section';
     const h = document.createElement('h2');
-    h.className = 'section__title';
-    h.textContent = section.label;
+    h.className = 'section__title'; h.textContent = section.label;
     sec.appendChild(h);
-    for (const field of section.fields) {
-      sec.appendChild(await makeRow(field, page.file));
-    }
+    for (const field of section.fields) sec.appendChild(await makeRow(field, page.file));
     frag.appendChild(sec);
   }
-
   panel.innerHTML = '';
   panel.appendChild(frag);
 }
@@ -206,27 +288,27 @@ async function makeRow(field, file) {
   const row = document.createElement('div');
   row.className = 'row' + (found ? '' : ' row--missing');
 
-  const head = document.createElement('div');
-  head.className = 'row__head';
-  const label = document.createElement('span');
-  label.className = 'row__label';
-  label.textContent = field.label;
-  const count = document.createElement('span');
-  count.className = 'row__count';
-  head.append(label, count);
-
+  const side = document.createElement('div');
+  side.className = 'row__side';
+  const label = document.createElement('div');
+  label.className = 'row__label'; label.textContent = field.label;
   const cur = document.createElement('p');
   cur.className = 'row__current';
-  cur.innerHTML = '<b>Nu:</b> ';
+  cur.innerHTML = '<b>Nu</b>';
   cur.appendChild(document.createTextNode(baseline || '—'));
+  side.append(label, cur);
 
+  const main = document.createElement('div');
+  main.className = 'row__main';
   const area = document.createElement('textarea');
   area.className = 'field__area';
-  area.rows = Math.min(6, Math.max(1, Math.ceil((value.length || 1) / 60)));
+  area.rows = Math.min(7, Math.max(1, Math.ceil((value.length || 1) / 52)));
   area.value = value;
-  if (!found) { area.disabled = true; }
-  else if (max > 0) { area.maxLength = max; }
+  if (!found) area.disabled = true;
+  else if (max > 0) area.maxLength = max;
 
+  const count = document.createElement('span');
+  count.className = 'row__count';
   const foot = document.createElement('div');
   foot.className = 'row__foot';
   const status = document.createElement('span');
@@ -235,31 +317,24 @@ async function makeRow(field, file) {
   resetBtn.className = 'btn btn--ghost btn--sm';
   resetBtn.textContent = 'Herstel origineel';
   foot.append(status, resetBtn);
+  main.append(area, count, foot);
 
   const updateCount = () => {
     const len = area.value.length;
-    count.textContent = found ? `${len} / ${max}` : 'veld niet gevonden';
+    count.textContent = found ? `${len} / ${max} tekens` : 'veld niet gevonden';
     count.classList.toggle('is-full', found && max > 0 && len >= max);
   };
-
-  // De huidige opgeslagen waarde (override of origineel).
-  const savedValue = () => {
-    const ov = overrides[field.key];
-    return (ov != null && ov !== '') ? ov : baseline;
-  };
-
+  const savedValue = () => { const ov = overrides[field.key]; return (ov != null && ov !== '') ? ov : baseline; };
   const refreshState = () => {
     updateCount();
     const changed = found && area.value !== savedValue();
     if (changed) {
       pending.set(field.key, { value: area.value, baseline });
-      status.textContent = 'Niet opgeslagen';
-      status.className = 'row__status is-dirty';
+      status.textContent = 'Niet opgeslagen'; status.className = 'row__status is-dirty';
       row.classList.add('row--dirty');
     } else {
       pending.delete(field.key);
-      status.textContent = '';
-      status.className = 'row__status';
+      status.textContent = ''; status.className = 'row__status';
       row.classList.remove('row--dirty');
     }
     updateSaveBar();
@@ -269,16 +344,15 @@ async function makeRow(field, file) {
   area.addEventListener('input', refreshState);
   resetBtn.addEventListener('click', () => { area.value = baseline; refreshState(); });
 
-  row.append(head, cur, area, foot);
+  row.append(side, main);
   return row;
 }
 
-// --- Onderbalk: expliciet opslaan ------------------------------------
+// ---- Onderbalk (alleen teksten) ----
 function ensureSaveBar() {
   if (saveBar) return saveBar;
   saveBar = document.createElement('div');
-  saveBar.className = 'savebar';
-  saveBar.hidden = true;
+  saveBar.className = 'savebar'; saveBar.hidden = true;
   saveBar.innerHTML =
     '<span class="savebar__info" data-info></span>' +
     '<div class="savebar__actions">' +
@@ -290,7 +364,6 @@ function ensureSaveBar() {
   saveBar.querySelector('[data-discard]').addEventListener('click', discardAll);
   return saveBar;
 }
-
 function updateSaveBar() {
   const bar = ensureSaveBar();
   const n = pending.size;
@@ -298,18 +371,14 @@ function updateSaveBar() {
   if (n) bar.querySelector('[data-info]').textContent =
     n === 1 ? '1 niet-opgeslagen wijziging' : `${n} niet-opgeslagen wijzigingen`;
 }
-
 function discardAll() {
-  pending.clear();
-  updateSaveBar();
-  if (activeTab && activeTab !== 'cases') renderTextPage(M.pages.find((p) => p.id === activeTab));
+  pending.clear(); updateSaveBar();
+  if (activeTab !== 'cases' && activeView === 'tekst') renderTextPage(pageById(activeTab));
 }
-
 async function saveAll() {
   const items = [...pending.entries()];
   if (!items.length) return;
-  const bar = ensureSaveBar();
-  const btn = bar.querySelector('[data-save]');
+  const btn = ensureSaveBar().querySelector('[data-save]');
   btn.disabled = true; btn.textContent = 'Opslaan…';
   const toUpsert = [], toDelete = [];
   items.forEach(([key, { value, baseline }]) => {
@@ -323,7 +392,7 @@ async function saveAll() {
     toDelete.forEach((key) => { delete overrides[key]; });
     pending.clear();
     toast('Wijzigingen opgeslagen ✓');
-    renderTextPage(M.pages.find((p) => p.id === activeTab));
+    renderTextPage(pageById(activeTab));
   } catch (e) {
     toast('Opslaan mislukt: ' + e.message, true);
   } finally {
@@ -332,9 +401,121 @@ async function saveAll() {
   }
 }
 
-// =====================================================================
-//  Cases-CMS
-// =====================================================================
+// ---------------------------------------------------------------------
+//  Media
+// ---------------------------------------------------------------------
+async function renderMediaPage(id) {
+  panel.innerHTML = '<div class="loading">Media laden…</div>';
+  const page = pageById(id);
+  const items = MEDIA_M.pages[id].items;
+  const frag = document.createDocumentFragment();
+
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = 'Vervang een foto door een nieuwe te uploaden. Laat voor het beste resultaat dezelfde verhouding aanhouden als de huidige foto.';
+  frag.appendChild(note);
+
+  const grid = document.createElement('div');
+  grid.className = 'media-grid';
+  for (const item of items) grid.appendChild(await mediaCard(item, page.file));
+  frag.appendChild(grid);
+
+  panel.innerHTML = '';
+  panel.appendChild(frag);
+}
+
+async function mediaCard(item, file) {
+  const baseline = await mediaBaseline(item, file);
+  const override = mediaOverrides[item.key];
+  const shown = override || baseline;
+
+  const card = document.createElement('div');
+  card.className = 'mediacard';
+
+  const thumb = document.createElement('div');
+  thumb.className = 'mediacard__thumb';
+  const img = document.createElement('img');
+  img.alt = ''; img.loading = 'lazy';
+  img.src = displaySrc(shown);
+  img.onerror = () => { thumb.textContent = 'Geen voorbeeld'; };
+  thumb.appendChild(img);
+
+  const body = document.createElement('div');
+  body.className = 'mediacard__body';
+  const label = document.createElement('div');
+  label.className = 'mediacard__label'; label.textContent = item.label;
+  const status = document.createElement('div');
+  status.className = 'mediacard__status';
+  if (override) status.textContent = 'Aangepast';
+
+  const actions = document.createElement('div');
+  actions.className = 'mediacard__actions';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.hidden = true;
+  const replaceBtn = document.createElement('button');
+  replaceBtn.className = 'btn btn--primary btn--sm';
+  replaceBtn.textContent = 'Vervang foto';
+  replaceBtn.addEventListener('click', () => fileInput.click());
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn--ghost btn--sm';
+  resetBtn.textContent = 'Herstel';
+  resetBtn.hidden = !override;
+
+  fileInput.addEventListener('change', () => {
+    const f = fileInput.files[0];
+    if (f) uploadMedia(item, f, { img, status, resetBtn, replaceBtn });
+    fileInput.value = '';
+  });
+  resetBtn.addEventListener('click', () => resetMedia(item, baseline, { img, status, resetBtn }));
+
+  actions.append(replaceBtn, resetBtn, fileInput);
+  body.append(label, status, actions);
+  card.append(thumb, body);
+  return card;
+}
+
+async function uploadMedia(item, file, els) {
+  els.status.className = 'mediacard__status'; els.status.textContent = 'Uploaden…';
+  els.replaceBtn.disabled = true;
+  try {
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = item.key.replace(/[^a-z0-9]+/gi, '-') + '-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from(MEDIA).upsert({ key: item.key, url }, { onConflict: 'key' });
+    if (error) throw error;
+    mediaOverrides[item.key] = url;
+    els.img.src = url;
+    els.status.textContent = 'Vervangen ✓'; els.status.classList.add('is-ok');
+    els.resetBtn.hidden = false;
+    toast('Foto vervangen ✓');
+  } catch (e) {
+    els.status.textContent = 'Upload mislukt'; els.status.classList.add('is-error');
+    toast('Upload mislukt: ' + e.message, true);
+  } finally {
+    els.replaceBtn.disabled = false;
+  }
+}
+
+async function resetMedia(item, baseline, els) {
+  els.status.className = 'mediacard__status'; els.status.textContent = 'Herstellen…';
+  try {
+    const { error } = await sb.from(MEDIA).delete().eq('key', item.key);
+    if (error) throw error;
+    delete mediaOverrides[item.key];
+    els.img.src = displaySrc(baseline);
+    els.status.textContent = ''; els.resetBtn.hidden = true;
+    toast('Oorspronkelijke foto hersteld');
+  } catch (e) {
+    els.status.textContent = 'Herstellen mislukt'; els.status.classList.add('is-error');
+    toast('Herstellen mislukt: ' + e.message, true);
+  }
+}
+
+// ---------------------------------------------------------------------
+//  Cases
+// ---------------------------------------------------------------------
 const CASE_FIELDS = [
   { k: 'title', label: 'Titel' },
   { k: 'brand', label: 'Merk (hoofdletters)' },
@@ -346,7 +527,6 @@ const CASE_FIELDS = [
   { k: 'services', label: 'Services' },
   { k: 'summary', label: 'Samenvatting', full: true, area: true },
 ];
-
 let casesData = [];
 
 async function renderCases() {
@@ -354,66 +534,45 @@ async function renderCases() {
   const { data, error } = await sb.from(CASES).select('*').order('sort_order', { ascending: true });
   if (error) { panel.innerHTML = `<div class="note">Kon cases niet laden: ${error.message}</div>`; return; }
   casesData = data || [];
-
   panel.innerHTML = '';
-  const head = document.createElement('div');
-  head.className = 'cases__head';
-  head.innerHTML = '<h2 class="section__title" style="margin:0">Cases</h2>';
-  const add = document.createElement('button');
-  add.className = 'btn btn--primary';
-  add.textContent = '+ Nieuwe case';
-  add.addEventListener('click', addCase);
-  head.appendChild(add);
-  panel.appendChild(head);
-
   const note = document.createElement('div');
   note.className = 'note';
-  note.textContent = 'Media (foto’s/video’s) staan in de map assets/cases/<slug>/ en worden via de slug gekoppeld. "Highlighted" bepaalt of de case op de homepage verschijnt.';
+  note.textContent = 'Media (foto’s/video’s) staan in assets/cases/<slug>/ en worden via de slug gekoppeld. "Op homepage" bepaalt of de case in de carousel op de homepage staat.';
   panel.appendChild(note);
-
   casesData.forEach((c, i) => panel.appendChild(caseCard(c, i)));
 }
 
 function caseCard(c, index) {
   const card = document.createElement('div');
   card.className = 'case';
-
-  // --- Balk ---
   const bar = document.createElement('div');
   bar.className = 'case__bar';
   const title = document.createElement('span');
-  title.className = 'case__title';
-  title.textContent = c.title || c.slug;
+  title.className = 'case__title'; title.textContent = c.title || c.slug;
   const slug = document.createElement('span');
-  slug.className = 'case__slug';
-  slug.textContent = c.slug;
+  slug.className = 'case__slug'; slug.textContent = c.slug;
   const flags = document.createElement('span');
   flags.className = 'case__flags';
-  flags.innerHTML =
-    `<span class="flag ${c.highlighted ? 'on' : ''}">home</span>` +
-    `<span class="flag ${c.published ? 'on' : ''}">live</span>`;
-
+  const renderFlags = (o) => { flags.innerHTML =
+    `<span class="flag ${o.highlighted ? 'on' : ''}">home</span><span class="flag ${o.published ? 'on' : ''}">live</span>`; };
+  renderFlags(c);
   const up = document.createElement('button');
-  up.className = 'btn btn--ghost btn--sm'; up.textContent = '▲'; up.title = 'Omhoog';
+  up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
   up.addEventListener('click', (e) => { e.stopPropagation(); move(index, -1); });
   const down = document.createElement('button');
-  down.className = 'btn btn--ghost btn--sm'; down.textContent = '▼'; down.title = 'Omlaag';
+  down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
   down.addEventListener('click', (e) => { e.stopPropagation(); move(index, 1); });
-
   bar.append(title, slug, flags, up, down);
   bar.addEventListener('click', () => card.classList.toggle('is-open'));
 
-  // --- Body ---
   const body = document.createElement('div');
   body.className = 'case__body';
   const inputs = {};
-
   CASE_FIELDS.forEach((f) => {
     const wrap = document.createElement('label');
     wrap.className = 'field' + (f.full ? ' field--full' : '');
     const lab = document.createElement('span');
-    lab.className = 'field__label';
-    lab.textContent = f.label;
+    lab.className = 'field__label'; lab.textContent = f.label;
     let input;
     if (f.area) { input = document.createElement('textarea'); input.className = 'field__area'; input.rows = 3; }
     else { input = document.createElement('input'); input.className = 'field__input'; input.type = 'text'; }
@@ -423,7 +582,6 @@ function caseCard(c, index) {
     body.appendChild(wrap);
   });
 
-  // Toggles + acties
   const actions = document.createElement('div');
   actions.className = 'case__actions';
   const toggles = document.createElement('div');
@@ -431,14 +589,10 @@ function caseCard(c, index) {
   const hl = toggle('Op homepage', c.highlighted);
   const pub = toggle('Live op site', c.published);
   toggles.append(hl.el, pub.el);
-
   const save = document.createElement('button');
-  save.className = 'btn btn--primary btn--sm';
-  save.textContent = 'Opslaan';
+  save.className = 'btn btn--primary btn--sm'; save.textContent = 'Opslaan';
   const del = document.createElement('button');
-  del.className = 'btn btn--ghost btn--sm btn--danger';
-  del.textContent = 'Verwijderen';
-
+  del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijderen';
   actions.append(toggles, save, del);
   body.appendChild(actions);
   card.append(bar, body);
@@ -446,37 +600,27 @@ function caseCard(c, index) {
   save.addEventListener('click', async () => {
     save.disabled = true; save.textContent = 'Opslaan…';
     const patch = {
-      title: inputs.title.value.trim(),
-      brand: inputs.brand.value.trim(),
+      title: inputs.title.value.trim(), brand: inputs.brand.value.trim(),
       sub: inputs.sub.value.trim(),
       tags: inputs.tags.value.split(',').map((t) => t.trim()).filter(Boolean),
-      client: inputs.client.value.trim(),
-      date: inputs.date.value.trim(),
-      role: inputs.role.value.trim(),
-      services: inputs.services.value.trim(),
+      client: inputs.client.value.trim(), date: inputs.date.value.trim(),
+      role: inputs.role.value.trim(), services: inputs.services.value.trim(),
       summary: inputs.summary.value.trim(),
-      highlighted: hl.input.checked,
-      published: pub.input.checked,
+      highlighted: hl.input.checked, published: pub.input.checked,
     };
     const { error } = await sb.from(CASES).update(patch).eq('id', c.id);
     save.disabled = false; save.textContent = 'Opslaan';
     if (error) { toast('Opslaan mislukt: ' + error.message, true); return; }
     toast('Case opgeslagen ✓');
     Object.assign(c, patch);
-    title.textContent = patch.title || c.slug;
-    flags.innerHTML =
-      `<span class="flag ${patch.highlighted ? 'on' : ''}">home</span>` +
-      `<span class="flag ${patch.published ? 'on' : ''}">live</span>`;
+    title.textContent = patch.title || c.slug; renderFlags(patch);
   });
-
   del.addEventListener('click', async () => {
     if (!confirm(`Case "${c.title || c.slug}" definitief verwijderen?`)) return;
     const { error } = await sb.from(CASES).delete().eq('id', c.id);
     if (error) { toast('Verwijderen mislukt: ' + error.message, true); return; }
-    toast('Case verwijderd');
-    renderCases();
+    toast('Case verwijderd'); renderCases();
   });
-
   return card;
 }
 
@@ -484,42 +628,35 @@ function toggle(label, checked) {
   const el = document.createElement('label');
   el.className = 'toggle';
   const input = document.createElement('input');
-  input.type = 'checkbox';
-  input.checked = !!checked;
-  const span = document.createElement('span');
-  span.textContent = label;
+  input.type = 'checkbox'; input.checked = !!checked;
+  const span = document.createElement('span'); span.textContent = label;
   el.append(input, span);
   return { el, input };
 }
-
 async function move(index, dir) {
   const j = index + dir;
   if (j < 0 || j >= casesData.length) return;
   const a = casesData[index], b = casesData[j];
-  const ao = a.sort_order, bo = b.sort_order;
   await Promise.all([
-    sb.from(CASES).update({ sort_order: bo }).eq('id', a.id),
-    sb.from(CASES).update({ sort_order: ao }).eq('id', b.id),
+    sb.from(CASES).update({ sort_order: b.sort_order }).eq('id', a.id),
+    sb.from(CASES).update({ sort_order: a.sort_order }).eq('id', b.id),
   ]);
   renderCases();
 }
-
 async function addCase() {
   const slug = prompt('Slug voor de nieuwe case (uniek, kleine letters, bv. "nieuwe-case"):');
   if (!slug) return;
   const clean = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
   const maxOrder = casesData.reduce((m, c) => Math.max(m, c.sort_order || 0), 0);
-  const { error } = await sb.from(CASES).insert({
-    slug: clean, title: clean, sort_order: maxOrder + 1, highlighted: true, published: true,
-  });
+  const { error } = await sb.from(CASES).insert({ slug: clean, title: clean, sort_order: maxOrder + 1, highlighted: true, published: true });
   if (error) { toast('Aanmaken mislukt: ' + error.message, true); return; }
   toast('Case aangemaakt ✓');
-  renderCases();
+  if (activeTab !== 'cases') selectTab('cases'); else renderCases();
 }
 
-// =====================================================================
+// ---------------------------------------------------------------------
 //  Toast
-// =====================================================================
+// ---------------------------------------------------------------------
 let toastTimer;
 function toast(msg, isError) {
   const el = $('#toast');

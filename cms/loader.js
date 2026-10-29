@@ -28,11 +28,28 @@ async function fetchData() {
   // Supabase-client pas hier laden, zodat een geblokkeerde CDN de site niet breekt.
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
   const sb = createClient(cfg.url, cfg.anonKey, { auth: { persistSession: false } });
-  const [texts, cases] = await Promise.all([
+  const [texts, cases, media] = await Promise.all([
     sb.from(cfg.tables.texts).select('key,value'),
     sb.from(cfg.tables.cases).select('*').eq('published', true).order('sort_order', { ascending: true }),
+    sb.from(cfg.tables.media).select('key,url'),
   ]);
-  return { texts: texts.data || [], cases: cases.data || [] };
+  return { texts: texts.data || [], cases: cases.data || [], media: media.data || [] };
+}
+
+// --- Media-overrides toepassen (foto's die in de pagina zitten) --------
+function applyMedia(rows) {
+  if (!rows.length || !window.CMS_MEDIA) return;
+  const map = {};
+  rows.forEach((r) => { if (r.url) map[r.key] = r.url; });
+  (window.CMS_MEDIA.allItems || []).forEach((it) => {
+    if (!(it.key in map)) return;
+    try {
+      const el = document.querySelector(it.selector);
+      if (!el) return;
+      if (it.attr === 'src') el.src = map[it.key];
+      else el.setAttribute(it.attr, map[it.key]);
+    } catch (_) { /* negeren */ }
+  });
 }
 
 // --- Teksten toepassen -------------------------------------------------
@@ -108,6 +125,7 @@ async function startPage() {
     const res = await withTimeout(fetchData(), cfg.fetchTimeoutMs);
     if (res && !res.__timeout) {
       applyTexts(res.texts);
+      applyMedia(res.media);
       mergeCases(res.cases);
     } else {
       window.CMS_TEXT = window.CMS_TEXT || {};

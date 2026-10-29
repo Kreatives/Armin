@@ -21,6 +21,13 @@ Dit maakt twee tabellen aan (`site_texts`, `cases`), zet de beveiliging (RLS)
 goed en vult je 16 bestaande cases alvast in. Het script is veilig om opnieuw te
 draaien.
 
+### 1b. Media-beheer klaarzetten (éénmalig)
+
+Voor het vervangen van foto's: plak ook [`supabase/media.sql`](supabase/media.sql)
+in de SQL Editor en klik **Run**. Dit maakt de `site_media`-tabel en een publieke
+opslag-bucket (`site-media`) aan. Zie je ooit "permission denied", draai dan
+[`supabase/grants-fix.sql`](supabase/grants-fix.sql).
+
 ## 2. Inlog-account aanmaken (éénmalig)
 
 1. Supabase → **Authentication** → **Users** → **Add user** → **Create new user**.

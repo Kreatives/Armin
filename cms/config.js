@@ -7,7 +7,8 @@
 window.CMS_CONFIG = {
   url: 'https://rofihxpwduvhmhwlkyaz.supabase.co',
   anonKey: 'sb_publishable_qqGDDmGWaJnJ1IAuki5lKA_3QSKDron',
-  tables: { texts: 'site_texts', cases: 'cases' },
+  tables: { texts: 'site_texts', cases: 'cases', media: 'site_media' },
+  bucket: 'site-media',
   // Hoeveel ms de site wacht op Supabase voordat hij met de originele
   // (in de HTML gebakken) teksten doorgaat. Site breekt dus nooit.
   fetchTimeoutMs: 1500,
