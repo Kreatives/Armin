@@ -872,6 +872,38 @@ function mediaThumbEl(item) {
   return thumb;
 }
 
+// Herbruikbare "Vervang"-knop: opent een bestandskiezer en geeft het bestand door.
+function makeReplaceBtn(accept, onFile) {
+  const wrap = document.createElement('span');
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = accept; input.hidden = true;
+  const btn = document.createElement('button');
+  btn.className = 'btn btn--ghost btn--sm'; btn.type = 'button'; btn.textContent = 'Vervang';
+  btn.addEventListener('click', () => input.click());
+  input.addEventListener('change', () => { const f = input.files[0]; if (f) onFile(f, btn); input.value = ''; });
+  wrap.append(btn, input);
+  return wrap;
+}
+
+async function replaceCaseMedia(row, file, slug, mount, btn) {
+  btn.disabled = true; btn.textContent = 'Vervangen…';
+  try {
+    const { portrait, kind } = await detectPortraitKind(file);
+    const ext = (file.name.split('.').pop() || (kind === 'video' ? 'mp4' : 'jpg')).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = 'case-media-' + slug + '-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from(CASE_MEDIA).update({ url, kind, portrait }).eq('id', row.id);
+    if (error) throw error;
+    toast('Media vervangen ✓');
+    renderCaseMediaSection(slug, mount);
+  } catch (e) {
+    toast('Vervangen mislukt: ' + e.message, true);
+    btn.disabled = false; btn.textContent = 'Vervang';
+  }
+}
+
 async function renderCaseMediaSection(slug, mount) {
   mount.innerHTML = '<div class="loading" style="padding:10px 0">Media laden…</div>';
   const { data, error } = await sb.from(CASE_MEDIA).select('*').eq('slug', slug).order('sort_order', { ascending: true });
@@ -895,13 +927,14 @@ async function renderCaseMediaSection(slug, mount) {
       const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
       up.addEventListener('click', () => moveCaseMedia(rows, i, -1, slug, mount));
       down.addEventListener('click', () => moveCaseMedia(rows, i, 1, slug, mount));
+      const rep = makeReplaceBtn('image/*,video/*', (f, btn) => replaceCaseMedia(m, f, slug, mount, btn));
       del.addEventListener('click', async () => {
         if (!confirm('Deze media verwijderen?')) return;
         const { error: e } = await sb.from(CASE_MEDIA).delete().eq('id', m.id);
         if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
         renderCaseMediaSection(slug, mount);
       });
-      bar.append(up, down, del);
+      bar.append(up, down, rep, del);
       card.appendChild(bar);
       grid.appendChild(card);
     });
@@ -1069,12 +1102,13 @@ async function renderMarquee() {
       const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
       up.addEventListener('click', () => moveMarquee(rows, i, -1));
       down.addEventListener('click', () => moveMarquee(rows, i, 1));
+      const rep = makeReplaceBtn('image/*', (f, btn) => replaceMarqueeLogo(m, f, btn));
       del.addEventListener('click', async () => {
         const { error: e } = await sb.from(MARQUEE).delete().eq('id', m.id);
         if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
         renderMarquee();
       });
-      bar.append(up, down, del); card.append(thumb, bar); grid.appendChild(card);
+      bar.append(up, down, rep, del); card.append(thumb, bar); grid.appendChild(card);
     });
     panel.appendChild(grid);
   } else {
@@ -1141,6 +1175,24 @@ async function uploadMarqueeLogo(file, rows, btn) {
   } catch (e) {
     toast('Uploaden mislukt: ' + e.message, true);
     btn.disabled = false; btn.textContent = '+ Logo uploaden';
+  }
+}
+
+async function replaceMarqueeLogo(row, file, btn) {
+  btn.disabled = true; btn.textContent = 'Vervangen…';
+  try {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = 'marquee-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from(MARQUEE).update({ url }).eq('id', row.id);
+    if (error) throw error;
+    toast('Logo vervangen ✓');
+    renderMarquee();
+  } catch (e) {
+    toast('Vervangen mislukt: ' + e.message, true);
+    btn.disabled = false; btn.textContent = 'Vervang';
   }
 }
 
