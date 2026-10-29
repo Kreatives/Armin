@@ -35,7 +35,7 @@ values
    'Football & Culture', array['Football & Culture'], array['Digital Media Strategy','Brand Development','Format Creation','Creative Mentorship'], 3, true, true, true),
 
   ('complex-sneaker-shopping', 'Complex’ Sneaker Shopping',
-   $$Led the launch of Complex’s iconic Sneaker Shopping format in the Netherlands as Creative Director. Successfully pitched and sold the format to G-SHOCK as its commercial sponsor, overseeing the creative strategy, local adaptation and production. Responsible for recruitment and developing the social media strategy to introduce the format to Dutch audiences.$$,
+   $$Led the launch of Complex’s iconic Sneaker Shopping format in the Netherlands as Creative Director. Successfully pitched and sold the format to G-SHOCK as its commercial sponsor, overseeing the creative strategy, local adaptation and production. Responsible for talent recruitment and developing the social media strategy to introduce the format to Dutch audiences.$$,
    'G-SHOCK', 'Complex', null, 'Branded Entertainment & Format Development', 'Creative Director',
    'Format & IP', array['Format & IP'], array['Creative Strategy','Format Development','Sponsorship Sales','Talent Recruitment','Social Media Strategy'], 4, true, true, true),
 
