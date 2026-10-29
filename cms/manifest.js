@@ -147,7 +147,7 @@
           { label: 'Over Armin (uitgebreid)', fields: [
             f('home.about.label', 'Label',              '.about__lead .about__label'),
             f('home.about.title', 'Highlight-statement','.about__title'),
-            f('home.about.metaRole', 'Meta-regel', '.about__meta .about__meta-item:nth-of-type(1)', { mode: 'lastText' }),
+            f('home.about.metaRole', 'Meta-regel', '.about__meta .about__meta-item:nth-of-type(1)'),
             f('home.about.expLabel', 'Kop werkervaring', '.about__inner > .about__info:nth-child(2) .about__label'),
             ...homeExp,
             f('home.about.hlLabel', 'Kop highlights', '.about__inner > .about__info:nth-child(3) .about__label'),
