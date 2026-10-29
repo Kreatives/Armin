@@ -100,7 +100,7 @@
   }
   // ---- About: at a glance (10) ----
   const glanceFields = [];
-  for (let i = 1; i <= 8; i++) {
+  for (let i = 1; i <= 7; i++) {
     const stat = `.ab-glance .ab-stat:nth-of-type(${i})`;
     glanceFields.push(...grp(`about-glance-${i}`, `Blok ${i}`, [
       f(`about.glance.g${i}.big`,   'Cijfer / woord', `${stat} .ab-stat__big`),
@@ -147,10 +147,7 @@
           { label: 'Over Armin (uitgebreid)', fields: [
             f('home.about.label', 'Label',              '.about__lead .about__label'),
             f('home.about.title', 'Highlight-statement','.about__title'),
-            ...grp('home-meta', 'Meta', [
-              f('home.about.metaRole', 'Rol',      '.about__meta .about__meta-item:nth-of-type(1)', { mode: 'lastText' }),
-              f('home.about.metaLoc',  'Locatie',  '.about__meta .about__meta-item:nth-of-type(2)'),
-            ]),
+            f('home.about.metaRole', 'Meta-regel', '.about__meta .about__meta-item:nth-of-type(1)', { mode: 'lastText' }),
             f('home.about.expLabel', 'Kop werkervaring', '.about__inner > .about__info:nth-child(2) .about__label'),
             ...homeExp,
             f('home.about.hlLabel', 'Kop highlights', '.about__inner > .about__info:nth-child(3) .about__label'),
@@ -174,10 +171,7 @@
           { label: '01 — Opening', fields: [
             f('about.hero.eyebrow', 'Label',        '.ab-hero__top .ab-eyebrow'),
             f('about.hero.title',   'Grote titel (gebruik <br> voor nieuwe regel)', '.ab-hero__big', { mode: 'html' }),
-            ...grp('about-hero-meta', 'Meta', [
-              f('about.hero.meta1', 'Links',  '.ab-hero__meta span:nth-of-type(1)'),
-              f('about.hero.meta2', 'Rechts', '.ab-hero__meta span:nth-of-type(2)'),
-            ]),
+            f('about.hero.meta1', 'Meta', '.ab-hero__meta span:nth-of-type(1)'),
             ...grp('about-hero-intro', 'Intro', [
               f('about.hero.intro1', 'Alinea 1', '.ab-hero__intro .ab-copy:nth-of-type(1)', { wide: true }),
               f('about.hero.intro2', 'Alinea 2', '.ab-hero__intro .ab-copy:nth-of-type(2)', { wide: true }),
@@ -279,10 +273,7 @@
           ]},
           { label: 'Gevestigd in', fields: [
             f('footer.basedLabel', 'Kop', '.contact__col:nth-of-type(4) .contact__label'),
-            ...grp('footer-based', 'Gegevens', [
-              f('footer.basedName', 'Naam',    '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(2)'),
-              f('footer.basedLoc',  'Locatie', '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(3)'),
-            ]),
+            f('footer.basedName', 'Naam', '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(2)'),
           ]},
           { label: 'Onderkant', fields: [
             ...grp('footer-bottom', 'Onderkant', [
