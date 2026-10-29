@@ -24,14 +24,18 @@ let activeTab = null;
 // =====================================================================
 //  Auth
 // =====================================================================
-async function boot() {
-  const { data } = await sb.auth.getSession();
-  if (data.session) showApp(data.session.user);
-  else showLogin();
+let appStarted = false;
 
+async function boot() {
+  // Belangrijk: binnen onAuthStateChange GEEN supabase-queries await'en
+  // (dat kan vastlopen door de interne auth-lock). We tonen hier alleen de
+  // juiste weergave en starten het dataladen los via setTimeout.
   sb.auth.onAuthStateChange((_e, session) => {
-    if (session) showApp(session.user); else showLogin();
+    if (session) { revealApp(session.user); setTimeout(initApp, 0); }
+    else { appStarted = false; showLogin(); }
   });
+  const { data } = await sb.auth.getSession();
+  if (!data.session) showLogin();
 }
 
 function showLogin() {
@@ -39,13 +43,23 @@ function showLogin() {
   loginBox.hidden = false;
 }
 
-async function showApp(user) {
+function revealApp(user) {
   loginBox.hidden = true;
   appBox.hidden = false;
   $('#user-email').textContent = user?.email || '';
-  await loadData();
-  buildTabs();
-  selectTab(activeTab || M.pages[0].id);
+}
+
+async function initApp() {
+  if (appStarted) return;          // voorkom dubbel laden
+  appStarted = true;
+  try {
+    await loadData();
+    buildTabs();
+    selectTab(activeTab || M.pages[0].id);
+  } catch (e) {
+    appStarted = false;
+    panel.innerHTML = `<div class="note">Kon de editor niet laden: ${e.message}</div>`;
+  }
 }
 
 $('#login-form').addEventListener('submit', async (e) => {
@@ -54,12 +68,19 @@ $('#login-form').addEventListener('submit', async (e) => {
   const err = $('#login-error');
   err.textContent = '';
   btn.disabled = true; btn.textContent = 'Bezig…';
-  const { error } = await sb.auth.signInWithPassword({
+  const { data, error } = await sb.auth.signInWithPassword({
     email: $('#login-email').value.trim(),
     password: $('#login-pass').value,
   });
   btn.disabled = false; btn.textContent = 'Inloggen';
-  if (error) err.textContent = 'Inloggen mislukt: ' + error.message;
+  if (error) {
+    err.textContent = error.message && /email not confirmed/i.test(error.message)
+      ? 'Dit account is nog niet bevestigd. Maak de user aan met "Auto Confirm User" aan, of bevestig het in Supabase.'
+      : 'Inloggen mislukt: ' + (error.message || 'onbekende fout');
+    return;
+  }
+  // Direct tonen (niet alleen leunen op het auth-event).
+  if (data?.user) { revealApp(data.user); setTimeout(initApp, 0); }
 });
 
 $('#logout-btn').addEventListener('click', () => sb.auth.signOut());
