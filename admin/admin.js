@@ -18,6 +18,8 @@ const tabsEl = $('#tabs');
 const docCache = {};
 let overrides = {};        // { key: value } uit site_texts
 let activeTab = null;
+const pending = new Map(); // key -> { value, baseline } : niet-opgeslagen tekst-wijzigingen
+let saveBar = null;
 
 // --- Fouten altijd zichtbaar maken (nooit een blanco scherm) -----------
 function fatal(msg) {
@@ -62,6 +64,8 @@ async function boot() {
 function showLogin() {
   appBox.hidden = true;
   loginBox.hidden = false;
+  pending.clear();
+  if (saveBar) saveBar.hidden = true;
 }
 
 function revealApp(user) {
@@ -153,6 +157,9 @@ function makeTab(id, label) {
   return b;
 }
 function selectTab(id) {
+  if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
+  pending.clear();
+  updateSaveBar();
   activeTab = id;
   [...tabsEl.children].forEach((t) => t.classList.toggle('is-active', t.dataset.id === id));
   if (id === 'cases') renderCases();
@@ -234,45 +241,94 @@ async function makeRow(field, file) {
     count.textContent = found ? `${len} / ${max}` : 'veld niet gevonden';
     count.classList.toggle('is-full', found && max > 0 && len >= max);
   };
-  updateCount();
 
-  let saveTimer;
-  const scheduleSave = () => {
-    clearTimeout(saveTimer);
-    status.textContent = '';
-    saveTimer = setTimeout(() => saveText(field.key, area.value, baseline, status), 600);
+  // De huidige opgeslagen waarde (override of origineel).
+  const savedValue = () => {
+    const ov = overrides[field.key];
+    return (ov != null && ov !== '') ? ov : baseline;
   };
 
-  area.addEventListener('input', () => { updateCount(); scheduleSave(); });
-  resetBtn.addEventListener('click', () => {
-    area.value = baseline;
+  const refreshState = () => {
     updateCount();
-    saveText(field.key, baseline, baseline, status);
-  });
+    const changed = found && area.value !== savedValue();
+    if (changed) {
+      pending.set(field.key, { value: area.value, baseline });
+      status.textContent = 'Niet opgeslagen';
+      status.className = 'row__status is-dirty';
+      row.classList.add('row--dirty');
+    } else {
+      pending.delete(field.key);
+      status.textContent = '';
+      status.className = 'row__status';
+      row.classList.remove('row--dirty');
+    }
+    updateSaveBar();
+  };
+
+  updateCount();
+  area.addEventListener('input', refreshState);
+  resetBtn.addEventListener('click', () => { area.value = baseline; refreshState(); });
 
   row.append(head, cur, area, foot);
   return row;
 }
 
-async function saveText(key, value, baseline, status) {
-  status.className = 'row__status';
-  status.textContent = 'Opslaan…';
+// --- Onderbalk: expliciet opslaan ------------------------------------
+function ensureSaveBar() {
+  if (saveBar) return saveBar;
+  saveBar = document.createElement('div');
+  saveBar.className = 'savebar';
+  saveBar.hidden = true;
+  saveBar.innerHTML =
+    '<span class="savebar__info" data-info></span>' +
+    '<div class="savebar__actions">' +
+      '<button class="btn btn--ghost" data-discard type="button">Ongedaan maken</button>' +
+      '<button class="btn btn--primary" data-save type="button">Wijzigingen opslaan</button>' +
+    '</div>';
+  document.body.appendChild(saveBar);
+  saveBar.querySelector('[data-save]').addEventListener('click', saveAll);
+  saveBar.querySelector('[data-discard]').addEventListener('click', discardAll);
+  return saveBar;
+}
+
+function updateSaveBar() {
+  const bar = ensureSaveBar();
+  const n = pending.size;
+  bar.hidden = n === 0;
+  if (n) bar.querySelector('[data-info]').textContent =
+    n === 1 ? '1 niet-opgeslagen wijziging' : `${n} niet-opgeslagen wijzigingen`;
+}
+
+function discardAll() {
+  pending.clear();
+  updateSaveBar();
+  if (activeTab && activeTab !== 'cases') renderTextPage(M.pages.find((p) => p.id === activeTab));
+}
+
+async function saveAll() {
+  const items = [...pending.entries()];
+  if (!items.length) return;
+  const bar = ensureSaveBar();
+  const btn = bar.querySelector('[data-save]');
+  btn.disabled = true; btn.textContent = 'Opslaan…';
+  const toUpsert = [], toDelete = [];
+  items.forEach(([key, { value, baseline }]) => {
+    if (value === baseline || value.trim() === '') toDelete.push(key);
+    else toUpsert.push({ key, value });
+  });
   try {
-    if (value === baseline || value.trim() === '') {
-      await sb.from(TEXTS).delete().eq('key', key);
-      delete overrides[key];
-      status.textContent = 'Origineel';
-    } else {
-      const { error } = await sb.from(TEXTS).upsert({ key, value }, { onConflict: 'key' });
-      if (error) throw error;
-      overrides[key] = value;
-      status.textContent = 'Opgeslagen ✓';
-    }
-    status.classList.add('is-saved');
+    if (toUpsert.length) { const { error } = await sb.from(TEXTS).upsert(toUpsert, { onConflict: 'key' }); if (error) throw error; }
+    if (toDelete.length) { const { error } = await sb.from(TEXTS).delete().in('key', toDelete); if (error) throw error; }
+    toUpsert.forEach(({ key, value }) => { overrides[key] = value; });
+    toDelete.forEach((key) => { delete overrides[key]; });
+    pending.clear();
+    toast('Wijzigingen opgeslagen ✓');
+    renderTextPage(M.pages.find((p) => p.id === activeTab));
   } catch (e) {
-    status.textContent = 'Fout bij opslaan';
-    status.classList.add('is-error');
     toast('Opslaan mislukt: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.textContent = 'Wijzigingen opslaan';
+    updateSaveBar();
   }
 }
 

@@ -17,6 +17,8 @@
 }
 
 * { box-sizing: border-box; }
+/* Forceer het hidden-attribuut (anders winnen display:grid/flex hiervan). */
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg);
@@ -84,7 +86,17 @@ body {
 .tab.is-active { background: var(--panel-2); color: var(--text); border-color: var(--line); }
 
 /* ---- Panel ---- */
-.panel { max-width: 920px; margin: 0 auto; padding: 24px 18px 80px; }
+.panel { max-width: 920px; margin: 0 auto; padding: 24px 18px 110px; }
+
+/* Vaste onderbalk voor opslaan */
+.savebar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 13px 24px; background: var(--panel); border-top: 1px solid var(--line);
+  box-shadow: 0 -10px 30px rgba(0,0,0,.4);
+}
+.savebar__info { color: var(--warn); font-size: 14px; font-weight: 600; }
+.savebar__actions { display: flex; gap: 10px; }
 .loading { color: var(--muted); padding: 40px 0; text-align: center; }
 
 .section { margin: 28px 0; }
@@ -117,6 +129,8 @@ body {
 .row__status { font-size: 12px; color: var(--muted); }
 .row__status.is-saved { color: var(--ok); }
 .row__status.is-error { color: var(--danger); }
+.row__status.is-dirty { color: var(--warn); }
+.row--dirty { border-color: #4a3a22; }
 .row--missing { opacity: .6; }
 .row--missing .row__label::after { content: " · niet gevonden op de pagina"; color: var(--warn); font-weight: 400; font-size: 12px; }
 
