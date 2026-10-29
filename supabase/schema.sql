@@ -79,6 +79,13 @@ drop policy if exists cases_write on public.cases;
 create policy cases_read  on public.cases for select to anon, authenticated using (true);
 create policy cases_write on public.cases for all    to authenticated using (true) with check (true);
 
+-- Tabel-rechten (naast RLS): zonder deze GRANTs geeft de API "permission denied".
+grant usage on schema public to anon, authenticated;
+grant select on public.site_texts to anon, authenticated;
+grant select on public.cases      to anon, authenticated;
+grant insert, update, delete on public.site_texts to authenticated;
+grant insert, update, delete on public.cases      to authenticated;
+
 -- =====================================================================
 --  5. Seed: je 16 bestaande cases (uit generate-cases.js).
 --     on conflict (slug) do nothing => draait veilig opnieuw zonder

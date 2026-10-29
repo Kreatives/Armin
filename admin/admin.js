@@ -1,13 +1,11 @@
 /* =========================================================
    Content editor — Supabase Auth + tekst-editor + cases-CMS.
    ========================================================= */
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
 const cfg = window.CMS_CONFIG;
 const TEXTS = cfg.tables.texts;
 const CASES = cfg.tables.cases;
-const sb = createClient(cfg.url, cfg.anonKey);
 const M = window.CMS_MANIFEST;
+let sb = null;             // wordt gezet zodra Supabase geladen is
 
 // --- DOM-shortcuts -----------------------------------------------------
 const $ = (sel) => document.querySelector(sel);
@@ -20,6 +18,29 @@ const tabsEl = $('#tabs');
 const docCache = {};
 let overrides = {};        // { key: value } uit site_texts
 let activeTab = null;
+
+// --- Fouten altijd zichtbaar maken (nooit een blanco scherm) -----------
+function fatal(msg) {
+  if (loginBox) loginBox.hidden = false;
+  if (appBox) appBox.hidden = true;
+  const err = $('#login-error');
+  if (err) err.textContent = msg;
+  console.error('[admin]', msg);
+}
+window.addEventListener('error', (e) => fatal('Scriptfout: ' + (e.message || e.error)));
+window.addEventListener('unhandledrejection', (e) => fatal('Fout: ' + (e.reason?.message || e.reason)));
+
+// --- Supabase laden en starten -----------------------------------------
+(async function start() {
+  try {
+    const mod = await import('https://esm.sh/@supabase/supabase-js@2');
+    sb = mod.createClient(cfg.url, cfg.anonKey);
+  } catch (e) {
+    fatal('Kon Supabase niet laden (internet/esm.sh geblokkeerd?): ' + (e?.message || e));
+    return;
+  }
+  boot();
+})();
 
 // =====================================================================
 //  Auth
@@ -67,6 +88,7 @@ $('#login-form').addEventListener('submit', async (e) => {
   const btn = $('#login-btn');
   const err = $('#login-error');
   err.textContent = '';
+  if (!sb) { err.textContent = 'Nog bezig met laden, probeer het zo opnieuw.'; return; }
   btn.disabled = true; btn.textContent = 'Bezig…';
   const { data, error } = await sb.auth.signInWithPassword({
     email: $('#login-email').value.trim(),
@@ -451,5 +473,3 @@ function toast(msg, isError) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { el.hidden = true; }, 3200);
 }
-
-boot();
