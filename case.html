@@ -60,8 +60,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <script src="cases.js"></script>
+  <!-- CMS: config + manifest + helpers (loader onderaan start renderCase) -->
+  <script src="cms/config.js"></script>
+  <script src="cms/shared.js"></script>
+  <script src="cms/manifest.js"></script>
   <script>
-  (function () {
+  function renderCase() {
+    /* Gedeelde case-teksten komen uit het CMS (window.CMS_TEXT), met de
+       originele tekst als fallback. */
+    var T = window.CMS_TEXT || {};
+    function t(key, def) { return (T[key] != null && String(T[key]).trim() !== '') ? T[key] : def; }
+
     var cases = window.CASES || [];
     var root = document.querySelector('[data-case-root]');
     var nextRoot = document.querySelector('[data-case-next]');
@@ -77,17 +86,19 @@
 
     /* Vaste, gedeelde body-copy -> elke case identieke opbouw */
     var SECTIONS = [
-      { index: '01', title: 'The brief', body:
-        ['Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
-         'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt.'] },
-      { index: '02', title: 'The approach', body:
-        ['Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.',
-         'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.'] },
-      { index: '03', title: 'The result', body:
-        ['At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.',
-         'Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat.'] }
+      { index: '01', title: t('case.s1.title', 'The brief'), body:
+        [t('case.s1.p1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'),
+         t('case.s1.p2', 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt.')] },
+      { index: '02', title: t('case.s2.title', 'The approach'), body:
+        [t('case.s2.p1', 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.'),
+         t('case.s2.p2', 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.')] },
+      { index: '03', title: t('case.s3.title', 'The result'), body:
+        [t('case.s3.p1', 'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.'),
+         t('case.s3.p2', 'Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat.')] }
     ];
-    var QUOTE = { text: 'Football is the language, culture is the story', cite: '— Armin Shah' };
+    var QUOTE = { text: t('case.quote.text', 'Football is the language, culture is the story'), cite: t('case.quote.cite', '— Armin Shah') };
+    var LABEL = t('case.hero.label', 'Case');
+    var NEXT_EYEBROW = t('case.next.eyebrow', 'Next case');
 
     function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function isVideo(src) { return /\.mp4$/i.test(src); }
@@ -139,7 +150,7 @@
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       'Back to work</a>' +
       '<header class="cd-hero">' +
-        '<p class="cd-label" data-reveal>Case</p>' +
+        '<p class="cd-label" data-reveal>' + esc(LABEL) + '</p>' +
         (c.logo ? '<img class="cd-logo" src="' + c.logo + '" alt="' + esc(c.title) + ' logo" data-reveal />' : '') +
         '<h1 class="cd-hero__title" data-reveal>' + esc(c.title) + '</h1>' +
         '<p class="cd-hero__summary" data-reveal>' + esc(c.summary) + '</p>' +
@@ -158,7 +169,7 @@
       '<a class="cd-next__link cd-bleed" href="case.html?case=' + encodeURIComponent(next.slug) + '">' +
       '<img class="cd-next__bg" src="' + next.thumb + '" alt="" />' +
       '<span class="cd-next__inner">' +
-        '<span class="cd-next__eyebrow">Next case</span>' +
+        '<span class="cd-next__eyebrow">' + esc(NEXT_EYEBROW) + '</span>' +
         '<span class="cd-next__title">' + esc(next.title) + '</span>' +
       '</span>' +
       '<span class="cd-next__arrow" aria-hidden="true">→</span></a>';
@@ -172,7 +183,10 @@
           { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', scrollTrigger: { trigger: el, start: 'top 88%' } });
       });
     }
-  })();
+  }
+  window.renderCase = renderCase;
   </script>
+  <!-- CMS: haalt cases + gedeelde teksten op en roept daarna renderCase() aan -->
+  <script type="module" src="cms/loader.js"></script>
 </body>
 </html>

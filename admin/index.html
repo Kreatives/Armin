@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Armin Shah — Content editor</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <!-- Login -->
+  <div class="login" id="login" hidden>
+    <form class="login__card" id="login-form">
+      <h1 class="login__title">Content editor</h1>
+      <p class="login__sub">Log in om de teksten en cases van de website te beheren.</p>
+      <label class="field">
+        <span class="field__label">E-mail</span>
+        <input class="field__input" type="email" id="login-email" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span class="field__label">Wachtwoord</span>
+        <input class="field__input" type="password" id="login-pass" autocomplete="current-password" required />
+      </label>
+      <button class="btn btn--primary" type="submit" id="login-btn">Inloggen</button>
+      <p class="login__error" id="login-error" role="alert"></p>
+    </form>
+  </div>
+
+  <!-- App -->
+  <div class="app" id="app" hidden>
+    <header class="topbar">
+      <div class="topbar__brand">Armin Shah <span>· content editor</span></div>
+      <div class="topbar__right">
+        <span class="topbar__user" id="user-email"></span>
+        <button class="btn btn--ghost" id="logout-btn" type="button">Uitloggen</button>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs"></nav>
+
+    <main class="panel" id="panel">
+      <div class="loading" id="panel-loading">Laden…</div>
+    </main>
+  </div>
+
+  <!-- Opslaan-melding -->
+  <div class="toast" id="toast" hidden></div>
+
+  <!-- CMS-config + manifest + helpers -->
+  <script src="../cms/config.js"></script>
+  <script src="../cms/shared.js"></script>
+  <script src="../cms/manifest.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

@@ -501,6 +501,10 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="about.js?v=5" defer></script>
+  <!-- CMS: haalt teksten uit Supabase en start daarna about.js -->
+  <script src="cms/config.js"></script>
+  <script src="cms/shared.js"></script>
+  <script src="cms/manifest.js"></script>
+  <script type="module" src="cms/loader.js"></script>
 </body>
 </html>
