@@ -4,39 +4,40 @@
    Elke tekst op de site heeft een stabiele `key`. De editor én de
    runtime-loader gebruiken de `selector` om de bijbehorende HTML te
    vinden. De ORIGINELE tekst ("wat het nu is") staat NIET hier: die
-   leest de editor live uit de pagina zelf. Hier staat alleen waar elke
-   tekst zit en hoe hij heet.
+   leest de editor live uit de pagina zelf.
 
    Veld-opties:
-     mode: 'text'       (default) — vervang de volledige tekst
-           'firstText'  — vervang alleen het eerste tekst-deel (child-elementen blijven)
-           'lastText'   — vervang alleen het laatste tekst-deel
-           'html'       — tekst mag <br> bevatten (regel-einde)
-           'placeholder'— het gaat om het placeholder-attribuut van een input
-           'virtual'    — tekst wordt door JS gegenereerd (geen selector); `default` verplicht
-     default: baseline-tekst voor 'virtual'-velden (case-detailpagina)
+     mode: 'text'(default) | 'firstText' | 'lastText' | 'html' | 'placeholder' | 'virtual'
+     group / groupLabel : bundel korte velden in één compacte kaart
+     wide : dit veld in een groep is lang -> volle breedte
+     default : baseline-tekst voor 'virtual'-velden
    ========================================================= */
 (function () {
   const f = (key, label, selector, opts = {}) => ({ key, label, selector, mode: 'text', ...opts });
+  // Bundel velden in een groep; eerste veld draagt de kop.
+  const grp = (gid, title, fields) => {
+    fields.forEach((x, i) => { x.group = gid; if (i === 0) x.groupLabel = title; });
+    return fields;
+  };
 
-  // ---- Home: ervaring-rijen (rol / organisatie / periode) ----
+  // ---- Home: ervaring-rijen ----
   const homeExp = [];
   for (let i = 1; i <= 4; i++) {
     const row = `.about__inner > .about__info:nth-child(2) .about__row:nth-of-type(${i})`;
-    homeExp.push(
-      f(`home.about.exp${i}.role`,   `Rij ${i} — rol`,        `${row} h3:nth-of-type(1)`),
-      f(`home.about.exp${i}.org`,    `Rij ${i} — organisatie`, `${row} h3:nth-of-type(2)`),
-      f(`home.about.exp${i}.period`, `Rij ${i} — periode`,     `${row} h3:nth-of-type(3)`),
-    );
+    homeExp.push(...grp(`home-exp-${i}`, `Werkervaring — rij ${i}`, [
+      f(`home.about.exp${i}.role`,   'Rol',          `${row} h3:nth-of-type(1)`),
+      f(`home.about.exp${i}.org`,    'Organisatie',  `${row} h3:nth-of-type(2)`),
+      f(`home.about.exp${i}.period`, 'Periode',      `${row} h3:nth-of-type(3)`),
+    ]));
   }
-  // ---- Home: highlight-rijen (label / waarde) ----
+  // ---- Home: highlight-rijen ----
   const homeHl = [];
   for (let i = 1; i <= 4; i++) {
     const row = `.about__inner > .about__info:nth-child(3) .about__row:nth-of-type(${i})`;
-    homeHl.push(
-      f(`home.about.hl${i}.label`, `Rij ${i} — label`,  `${row} h3:nth-of-type(1)`),
-      f(`home.about.hl${i}.value`, `Rij ${i} — waarde`, `${row} h3:nth-of-type(2)`),
-    );
+    homeHl.push(...grp(`home-hl-${i}`, `Highlight — rij ${i}`, [
+      f(`home.about.hl${i}.label`, 'Label',  `${row} h3:nth-of-type(1)`),
+      f(`home.about.hl${i}.value`, 'Waarde', `${row} h3:nth-of-type(2)`),
+    ]));
   }
 
   // ---- About: story-kaarten (kaart 2 en 4 hebben geen jaartal) ----
@@ -44,74 +45,76 @@
   const storyFields = [];
   for (let i = 1; i <= 8; i++) {
     const card = `.ab-story__track > .ab-story__card:nth-of-type(${i})`;
-    if (storyHasYear[i]) storyFields.push(f(`about.story.c${i}.year`, `Kaart ${i} — jaar`, `${card} .ab-story__year`));
-    storyFields.push(
-      f(`about.story.c${i}.phase`,   `Kaart ${i} — fase`,        `${card} .ab-story__phase`),
-      f(`about.story.c${i}.company`, `Kaart ${i} — organisatie`, `${card} .ab-story__company`),
-      f(`about.story.c${i}.role`,    `Kaart ${i} — rol`,         `${card} .ab-story__role`),
-      f(`about.story.c${i}.text`,    `Kaart ${i} — tekst`,       `${card} .ab-story__text`),
+    const fields = [];
+    if (storyHasYear[i]) fields.push(f(`about.story.c${i}.year`, 'Jaar', `${card} .ab-story__year`));
+    fields.push(
+      f(`about.story.c${i}.phase`,   'Fase',         `${card} .ab-story__phase`),
+      f(`about.story.c${i}.company`, 'Organisatie',  `${card} .ab-story__company`),
+      f(`about.story.c${i}.role`,    'Rol',          `${card} .ab-story__role`),
+      f(`about.story.c${i}.text`,    'Tekst',        `${card} .ab-story__text`, { wide: true }),
     );
+    if (i === 3) fields.push(f('about.story.c3.text2', 'Tweede alinea', `${card} .ab-story__text + .ab-story__text`, { wide: true }));
+    storyFields.push(...grp(`about-story-${i}`, `Story-kaart ${i}`, fields));
   }
-  storyFields.push(f('about.story.c3.text2', 'Kaart 3 — tweede alinea', '.ab-story__track > .ab-story__card:nth-of-type(3) .ab-story__text + .ab-story__text'));
 
   // ---- About: diensten (04) ----
   const serviceFields = [];
   for (let i = 1; i <= 5; i++) {
     const s = `.ab-services .ab-service:nth-of-type(${i})`;
-    serviceFields.push(
-      f(`about.services.s${i}.title`, `Dienst ${i} — titel`, `${s} .ab-service__title`),
-      f(`about.services.s${i}.text`,  `Dienst ${i} — tekst`, `${s} .ab-service__text`),
-    );
+    serviceFields.push(...grp(`about-serv-${i}`, `Dienst ${i}`, [
+      f(`about.services.s${i}.title`, 'Titel', `${s} .ab-service__title`),
+      f(`about.services.s${i}.text`,  'Tekst', `${s} .ab-service__text`, { wide: true }),
+    ]));
   }
 
   // ---- About: ervaring (07) ----
   const aboutExp = [];
   for (let i = 1; i <= 8; i++) {
     const row = `[aria-label="Experience"] .ab-row:nth-of-type(${i})`;
-    aboutExp.push(
-      f(`about.exp.r${i}.year`,    `Rij ${i} — jaar`,        `${row} .ab-row__year`),
-      f(`about.exp.r${i}.company`, `Rij ${i} — organisatie`, `${row} .ab-row__company`),
-      f(`about.exp.r${i}.role`,    `Rij ${i} — rol`,         `${row} .ab-row__role`),
-    );
+    aboutExp.push(...grp(`about-exp-${i}`, `Werkervaring — rij ${i}`, [
+      f(`about.exp.r${i}.year`,    'Jaar',         `${row} .ab-row__year`),
+      f(`about.exp.r${i}.company`, 'Organisatie',  `${row} .ab-row__company`),
+      f(`about.exp.r${i}.role`,    'Rol',          `${row} .ab-row__role`),
+    ]));
   }
   // ---- About: erkenning (08) ----
   const aboutRec = [];
   for (let i = 1; i <= 2; i++) {
     const row = `[aria-label="Selected recognition"] .ab-row:nth-of-type(${i})`;
-    aboutRec.push(
-      f(`about.rec.r${i}.year`,    `Rij ${i} — jaar`,   `${row} .ab-row__year`),
-      f(`about.rec.r${i}.company`, `Rij ${i} — bron`,   `${row} .ab-row__company`),
-      f(`about.rec.r${i}.role`,    `Rij ${i} — tekst`,  `${row} .ab-row__role`),
-    );
+    aboutRec.push(...grp(`about-rec-${i}`, `Erkenning — rij ${i}`, [
+      f(`about.rec.r${i}.year`,    'Jaar',  `${row} .ab-row__year`),
+      f(`about.rec.r${i}.company`, 'Bron',  `${row} .ab-row__company`),
+      f(`about.rec.r${i}.role`,    'Tekst', `${row} .ab-row__role`),
+    ]));
   }
   // ---- About: featured & interviews (09) ----
   const featFields = [];
   for (let i = 1; i <= 9; i++) {
     const slide = `.ab-feat__track > .ab-feat__slide:nth-of-type(${i})`;
-    featFields.push(
-      f(`about.feat.s${i}.outlet`, `Item ${i} — bron`,        `${slide} .ab-feat__outlet`),
-      f(`about.feat.s${i}.title`,  `Item ${i} — titel`,       `${slide} .ab-feat__title`),
-      f(`about.feat.s${i}.desc`,   `Item ${i} — omschrijving`,`${slide} .ab-feat__desc`),
-      f(`about.feat.s${i}.cta`,    `Item ${i} — knoptekst`,   `${slide} .ab-feat__cta`),
-    );
+    featFields.push(...grp(`about-feat-${i}`, `Featured ${i}`, [
+      f(`about.feat.s${i}.outlet`, 'Bron',        `${slide} .ab-feat__outlet`),
+      f(`about.feat.s${i}.title`,  'Titel',       `${slide} .ab-feat__title`, { wide: true }),
+      f(`about.feat.s${i}.desc`,   'Omschrijving',`${slide} .ab-feat__desc`, { wide: true }),
+      f(`about.feat.s${i}.cta`,    'Knoptekst',   `${slide} .ab-feat__cta`),
+    ]));
   }
   // ---- About: at a glance (10) ----
   const glanceFields = [];
   for (let i = 1; i <= 8; i++) {
     const stat = `.ab-glance .ab-stat:nth-of-type(${i})`;
-    glanceFields.push(
-      f(`about.glance.g${i}.big`,   `Blok ${i} — cijfer/woord`, `${stat} .ab-stat__big`),
-      f(`about.glance.g${i}.label`, `Blok ${i} — label`,        `${stat} .ab-stat__label`),
-    );
+    glanceFields.push(...grp(`about-glance-${i}`, `Blok ${i}`, [
+      f(`about.glance.g${i}.big`,   'Cijfer / woord', `${stat} .ab-stat__big`),
+      f(`about.glance.g${i}.label`, 'Label',          `${stat} .ab-stat__label`),
+    ]));
   }
   // ---- About: FAQ (11) ----
   const faqFields = [];
   for (let i = 1; i <= 7; i++) {
     const item = `.ab-faq .ab-faq__item:nth-of-type(${i})`;
-    faqFields.push(
-      f(`about.faq.q${i}.q`, `Vraag ${i}`,     `${item} .ab-faq__q`, { mode: 'firstText' }),
-      f(`about.faq.q${i}.a`, `Antwoord ${i}`,  `${item} .ab-faq__a`),
-    );
+    faqFields.push(...grp(`about-faq-${i}`, `Vraag ${i}`, [
+      f(`about.faq.q${i}.q`, 'Vraag',    `${item} .ab-faq__q`, { mode: 'firstText', wide: true }),
+      f(`about.faq.q${i}.a`, 'Antwoord', `${item} .ab-faq__a`, { wide: true }),
+    ]));
   }
 
   const LOREM1 = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.';
@@ -131,35 +134,37 @@
             f('home.hero.body',  'Introzin',    '.hero__body'),
           ]},
           { label: 'Over Armin (kort)', fields: [
-            f('home.aboutShort.label',     'Label',               '.about-v1__label'),
-            f('home.aboutShort.highlight', 'Highlight-tekst',     '.about-v1__hl'),
-            f('home.aboutShort.text',      'Paragraaf',           '.about-v1__text'),
-            f('home.aboutShort.caption',   'Bijschrift foto’s',   '.about-v1__caption'),
-            f('home.aboutShort.cta',       'Knop',                '.about-v1__btm .btn-primary'),
+            f('home.aboutShort.label',     'Label',             '.about-v1__label'),
+            f('home.aboutShort.highlight', 'Highlight-tekst',   '.about-v1__hl'),
+            f('home.aboutShort.text',      'Paragraaf',         '.about-v1__text'),
+            f('home.aboutShort.caption',   'Bijschrift foto’s', '.about-v1__caption'),
+            f('home.aboutShort.cta',       'Knop',              '.about-v1__btm .btn-primary'),
           ]},
           { label: 'Cases', fields: [
             f('home.work.title', 'Titel', '.work__title'),
             f('home.work.cta',   'Knop',  '.work [data-open-diensten]'),
           ]},
           { label: 'Over Armin (uitgebreid)', fields: [
-            f('home.about.label',   'Label',             '.about__lead .about__label'),
-            f('home.about.title',   'Highlight-statement','.about__title'),
-            f('home.about.metaRole','Meta — rol',        '.about__meta .about__meta-item:nth-of-type(1)', { mode: 'lastText' }),
-            f('home.about.metaLoc', 'Meta — locatie',    '.about__meta .about__meta-item:nth-of-type(2)'),
-            f('home.about.expLabel','Kop ervaring',      '.about__inner > .about__info:nth-child(2) .about__label'),
+            f('home.about.label', 'Label',              '.about__lead .about__label'),
+            f('home.about.title', 'Highlight-statement','.about__title'),
+            ...grp('home-meta', 'Meta', [
+              f('home.about.metaRole', 'Rol',      '.about__meta .about__meta-item:nth-of-type(1)', { mode: 'lastText' }),
+              f('home.about.metaLoc',  'Locatie',  '.about__meta .about__meta-item:nth-of-type(2)'),
+            ]),
+            f('home.about.expLabel', 'Kop werkervaring', '.about__inner > .about__info:nth-child(2) .about__label'),
             ...homeExp,
-            f('home.about.hlLabel', 'Kop highlights',    '.about__inner > .about__info:nth-child(3) .about__label'),
+            f('home.about.hlLabel', 'Kop highlights', '.about__inner > .about__info:nth-child(3) .about__label'),
             ...homeHl,
           ]},
           { label: 'Nieuwsbrief', fields: [
-            f('home.newsletter.title',       'Titel',               '.newsletter__title'),
-            f('home.newsletter.body',        'Tekst',               '.newsletter__body'),
-            f('home.newsletter.placeholder', 'Placeholder invoer',  '.newsletter__input', { mode: 'placeholder' }),
-            f('home.newsletter.button',      'Knop',                '.newsletter__btn'),
+            f('home.newsletter.title',       'Titel',              '.newsletter__title'),
+            f('home.newsletter.body',        'Tekst',              '.newsletter__body'),
+            f('home.newsletter.placeholder', 'Placeholder invoer', '.newsletter__input', { mode: 'placeholder' }),
+            f('home.newsletter.button',      'Knop',               '.newsletter__btn'),
           ]},
           { label: 'Cases-overlay', fields: [
-            f('home.diensten.back', 'Terug-knop', '.diensten__back'),
-            f('home.diensten.hint', 'Scroll-hint','.diensten__hint'),
+            f('home.diensten.back', 'Terug-knop',  '.diensten__back'),
+            f('home.diensten.hint', 'Scroll-hint', '.diensten__hint'),
           ]},
         ],
       },
@@ -169,10 +174,14 @@
           { label: '01 — Opening', fields: [
             f('about.hero.eyebrow', 'Label',        '.ab-hero__top .ab-eyebrow'),
             f('about.hero.title',   'Grote titel (gebruik <br> voor nieuwe regel)', '.ab-hero__big', { mode: 'html' }),
-            f('about.hero.meta1',   'Meta links',   '.ab-hero__meta span:nth-of-type(1)'),
-            f('about.hero.meta2',   'Meta rechts',  '.ab-hero__meta span:nth-of-type(2)'),
-            f('about.hero.intro1',  'Intro alinea 1','.ab-hero__intro .ab-copy:nth-of-type(1)'),
-            f('about.hero.intro2',  'Intro alinea 2','.ab-hero__intro .ab-copy:nth-of-type(2)'),
+            ...grp('about-hero-meta', 'Meta', [
+              f('about.hero.meta1', 'Links',  '.ab-hero__meta span:nth-of-type(1)'),
+              f('about.hero.meta2', 'Rechts', '.ab-hero__meta span:nth-of-type(2)'),
+            ]),
+            ...grp('about-hero-intro', 'Intro', [
+              f('about.hero.intro1', 'Alinea 1', '.ab-hero__intro .ab-copy:nth-of-type(1)', { wide: true }),
+              f('about.hero.intro2', 'Alinea 2', '.ab-hero__intro .ab-copy:nth-of-type(2)', { wide: true }),
+            ]),
           ]},
           { label: '02 — The story', fields: [
             f('about.story.eyebrow', 'Label', '.ab-story__head .ab-eyebrow'),
@@ -180,9 +189,11 @@
           ]},
           { label: '03 — Conclusie', fields: [
             f('about.concl.statement', 'Statement', '[aria-label="What those worlds taught me"] .ab-statement'),
-            f('about.concl.copy1', 'Alinea 1', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(1)'),
-            f('about.concl.copy2', 'Alinea 2', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(2)'),
-            f('about.concl.copy3', 'Alinea 3', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(3)'),
+            ...grp('about-concl', 'Alinea’s', [
+              f('about.concl.copy1', 'Alinea 1', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(1)', { wide: true }),
+              f('about.concl.copy2', 'Alinea 2', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(2)', { wide: true }),
+              f('about.concl.copy3', 'Alinea 3', '[aria-label="What those worlds taught me"] .ab-statement-copy .ab-copy:nth-of-type(3)', { wide: true }),
+            ]),
           ]},
           { label: '04 — What I do', fields: [
             f('about.services.eyebrow', 'Label', '[data-services-sec] .ab-eyebrow'),
@@ -191,8 +202,10 @@
           ]},
           { label: '05 — Culture first', fields: [
             f('about.culture.statement', 'Statement', '[aria-label="Culture first"] .ab-statement'),
-            f('about.culture.copy1', 'Alinea 1', '[aria-label="Culture first"] .ab-statement-copy .ab-copy:nth-of-type(1)'),
-            f('about.culture.copy2', 'Alinea 2', '[aria-label="Culture first"] .ab-statement-copy .ab-copy:nth-of-type(2)'),
+            ...grp('about-culture', 'Alinea’s', [
+              f('about.culture.copy1', 'Alinea 1', '[aria-label="Culture first"] .ab-statement-copy .ab-copy:nth-of-type(1)', { wide: true }),
+              f('about.culture.copy2', 'Alinea 2', '[aria-label="Culture first"] .ab-statement-copy .ab-copy:nth-of-type(2)', { wide: true }),
+            ]),
           ]},
           { label: '06 — Partners', fields: [
             f('about.partners.eyebrow', 'Label', '.ab-partners .ab-eyebrow'),
@@ -230,27 +243,37 @@
         note: 'Deze teksten zijn gelijk op elke case-pagina. De titel, samenvatting en metadata per case beheer je bij Cases.',
         sections: [
           { label: 'Vaste onderdelen', fields: [
-            f('case.hero.label',   'Label boven titel', null, { mode: 'virtual', default: 'Case' }),
-            f('case.next.eyebrow', 'Label "volgende case"', null, { mode: 'virtual', default: 'Next case' }),
+            ...grp('case-labels', 'Labels', [
+              f('case.hero.label',   'Label boven titel',      null, { mode: 'virtual', default: 'Case' }),
+              f('case.next.eyebrow', 'Label "volgende case"',  null, { mode: 'virtual', default: 'Next case' }),
+            ]),
           ]},
           { label: 'Sectie 01', fields: [
             f('case.s1.title', 'Titel', null, { mode: 'virtual', default: 'The brief' }),
-            f('case.s1.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM1 }),
-            f('case.s1.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM2 }),
+            ...grp('case-s1', 'Alinea’s', [
+              f('case.s1.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM1, wide: true }),
+              f('case.s1.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM2, wide: true }),
+            ]),
           ]},
           { label: 'Sectie 02', fields: [
             f('case.s2.title', 'Titel', null, { mode: 'virtual', default: 'The approach' }),
-            f('case.s2.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM3 }),
-            f('case.s2.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM4 }),
+            ...grp('case-s2', 'Alinea’s', [
+              f('case.s2.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM3, wide: true }),
+              f('case.s2.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM4, wide: true }),
+            ]),
           ]},
           { label: 'Citaat', fields: [
-            f('case.quote.text', 'Citaat', null, { mode: 'virtual', default: 'Football is the language, culture is the story' }),
-            f('case.quote.cite', 'Bron',   null, { mode: 'virtual', default: '— Armin Shah' }),
+            ...grp('case-quote', 'Citaat', [
+              f('case.quote.text', 'Citaat', null, { mode: 'virtual', default: 'Football is the language, culture is the story', wide: true }),
+              f('case.quote.cite', 'Bron',   null, { mode: 'virtual', default: '— Armin Shah' }),
+            ]),
           ]},
           { label: 'Sectie 03', fields: [
             f('case.s3.title', 'Titel', null, { mode: 'virtual', default: 'The result' }),
-            f('case.s3.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM5 }),
-            f('case.s3.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM6 }),
+            ...grp('case-s3', 'Alinea’s', [
+              f('case.s3.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM5, wide: true }),
+              f('case.s3.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM6, wide: true }),
+            ]),
           ]},
         ],
       },
@@ -258,39 +281,48 @@
         id: 'footer', label: 'Footer (op alle pagina’s)', file: 'index.html',
         sections: [
           { label: 'Contact', fields: [
-            f('footer.contactLabel', 'Kop',            '.contact__col:nth-of-type(1) .contact__label'),
-            f('footer.email',        'E-mail (tekst)', '.contact__col:nth-of-type(1) a:nth-of-type(1)'),
-            f('footer.phone',        'Telefoon (tekst)','.contact__col:nth-of-type(1) a:nth-of-type(2)'),
+            f('footer.contactLabel', 'Kop',             '.contact__col:nth-of-type(1) .contact__label'),
+            ...grp('footer-contact', 'Gegevens', [
+              f('footer.email', 'E-mail (tekst)',  '.contact__col:nth-of-type(1) a:nth-of-type(1)'),
+              f('footer.phone', 'Telefoon (tekst)','.contact__col:nth-of-type(1) a:nth-of-type(2)'),
+            ]),
           ]},
           { label: 'Pagina’s', fields: [
-            f('footer.pagesLabel', 'Kop',  '.contact__col:nth-of-type(2) .contact__label'),
-            f('footer.nav1', 'Link 1', '.contact__col:nth-of-type(2) a:nth-of-type(1)'),
-            f('footer.nav2', 'Link 2', '.contact__col:nth-of-type(2) a:nth-of-type(2)'),
-            f('footer.nav3', 'Link 3', '.contact__col:nth-of-type(2) a:nth-of-type(3)'),
-            f('footer.nav4', 'Link 4', '.contact__col:nth-of-type(2) a:nth-of-type(4)'),
+            f('footer.pagesLabel', 'Kop', '.contact__col:nth-of-type(2) .contact__label'),
+            ...grp('footer-nav', 'Links', [
+              f('footer.nav1', 'Link 1', '.contact__col:nth-of-type(2) a:nth-of-type(1)'),
+              f('footer.nav2', 'Link 2', '.contact__col:nth-of-type(2) a:nth-of-type(2)'),
+              f('footer.nav3', 'Link 3', '.contact__col:nth-of-type(2) a:nth-of-type(3)'),
+              f('footer.nav4', 'Link 4', '.contact__col:nth-of-type(2) a:nth-of-type(4)'),
+            ]),
           ]},
           { label: 'Socials', fields: [
-            f('footer.socialsLabel', 'Kop',  '.contact__col:nth-of-type(3) .contact__label'),
-            f('footer.social1', 'Social 1', '.contact__col:nth-of-type(3) a:nth-of-type(1)'),
-            f('footer.social2', 'Social 2', '.contact__col:nth-of-type(3) a:nth-of-type(2)'),
-            f('footer.social3', 'Social 3', '.contact__col:nth-of-type(3) a:nth-of-type(3)'),
+            f('footer.socialsLabel', 'Kop', '.contact__col:nth-of-type(3) .contact__label'),
+            ...grp('footer-social', 'Links', [
+              f('footer.social1', 'Social 1', '.contact__col:nth-of-type(3) a:nth-of-type(1)'),
+              f('footer.social2', 'Social 2', '.contact__col:nth-of-type(3) a:nth-of-type(2)'),
+              f('footer.social3', 'Social 3', '.contact__col:nth-of-type(3) a:nth-of-type(3)'),
+            ]),
           ]},
           { label: 'Gevestigd in', fields: [
-            f('footer.basedLabel', 'Kop',      '.contact__col:nth-of-type(4) .contact__label'),
-            f('footer.basedName',  'Naam',     '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(2)'),
-            f('footer.basedLoc',   'Locatie',  '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(3)'),
+            f('footer.basedLabel', 'Kop', '.contact__col:nth-of-type(4) .contact__label'),
+            ...grp('footer-based', 'Gegevens', [
+              f('footer.basedName', 'Naam',    '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(2)'),
+              f('footer.basedLoc',  'Locatie', '.contact__col:nth-of-type(4) p.contact__link:nth-of-type(3)'),
+            ]),
           ]},
           { label: 'Onderkant', fields: [
-            f('footer.copy',     'Copyright', '.contact__copy'),
-            f('footer.wordmark', 'Woordmerk', '.contact__wordmark'),
+            ...grp('footer-bottom', 'Onderkant', [
+              f('footer.copy',     'Copyright', '.contact__copy'),
+              f('footer.wordmark', 'Woordmerk', '.contact__wordmark'),
+            ]),
           ]},
         ],
       },
     ],
   };
 
-  // Platte lijst van alle velden (handig voor de runtime-loader).
   window.CMS_MANIFEST.allFields = window.CMS_MANIFEST.pages.flatMap(
-    p => p.sections.flatMap(s => s.fields.map(fld => ({ ...fld, page: p.id })))
+    (p) => p.sections.flatMap((s) => s.fields.map((fld) => ({ ...fld, page: p.id })))
   );
 })();

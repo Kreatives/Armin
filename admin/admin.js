@@ -21,7 +21,6 @@ const docCache = {};
 let overrides = {};        // site_texts
 let mediaOverrides = {};   // site_media
 let activeTab = null;      // page id of 'cases'
-let activeView = 'tekst';  // 'tekst' | 'media'
 const pending = new Map(); // niet-opgeslagen tekst-wijzigingen
 let saveBar = null;
 
@@ -181,7 +180,6 @@ function highlightNav() {
   [...navEl.querySelectorAll('.nav__item')].forEach((b) => b.classList.toggle('is-active', b.dataset.id === activeTab));
 }
 
-function hasMedia(id) { return !!(MEDIA_M && MEDIA_M.pages[id]); }
 function pageById(id) { return M.pages.find((p) => p.id === id); }
 
 function previewUrl(id) {
@@ -195,16 +193,7 @@ function selectTab(id) {
   if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
   pending.clear(); updateSaveBar();
   activeTab = id;
-  activeView = 'tekst';
   highlightNav();
-  renderHeader();
-  renderBody();
-}
-function setView(v) {
-  if (v === activeView) return;
-  if (pending.size && !confirm('Je hebt niet-opgeslagen wijzigingen. Weggooien?')) return;
-  pending.clear(); updateSaveBar();
-  activeView = v;
   renderHeader();
   renderBody();
 }
@@ -226,18 +215,6 @@ function renderHeader() {
   } else {
     const page = pageById(activeTab);
     title.textContent = page.label;
-    if (hasMedia(activeTab)) {
-      const seg = document.createElement('div');
-      seg.className = 'seg';
-      ['tekst', 'media'].forEach((v) => {
-        const b = document.createElement('button');
-        b.className = 'seg__btn' + (activeView === v ? ' is-active' : '');
-        b.textContent = v === 'tekst' ? 'Tekst' : 'Media';
-        b.addEventListener('click', () => setView(v));
-        seg.appendChild(b);
-      });
-      right.appendChild(seg);
-    }
     const prev = document.createElement('a');
     prev.className = 'btn btn--ghost btn--sm';
     prev.href = previewUrl(activeTab);
@@ -251,15 +228,15 @@ function renderHeader() {
 
 function renderBody() {
   if (activeTab === 'cases') return renderCases();
-  if (activeView === 'media' && hasMedia(activeTab)) return renderMediaPage(activeTab);
   return renderTextPage(pageById(activeTab));
 }
 
 // ---------------------------------------------------------------------
-//  Tekst-editor
+//  Tekst-editor (met compacte groepen + inline media)
 // ---------------------------------------------------------------------
 async function renderTextPage(page) {
   panel.innerHTML = '<div class="loading">Teksten laden…</div>';
+  const mediaItems = (MEDIA_M && MEDIA_M.pages[page.id]) ? MEDIA_M.pages[page.id].items : [];
   const frag = document.createDocumentFragment();
   if (page.note) {
     const n = document.createElement('div');
@@ -272,34 +249,42 @@ async function renderTextPage(page) {
     const h = document.createElement('h2');
     h.className = 'section__title'; h.textContent = section.label;
     sec.appendChild(h);
-    for (const field of section.fields) sec.appendChild(await makeRow(field, page.file));
+
+    // Velden: opeenvolgende velden met dezelfde `group` -> één compacte kaart.
+    const fields = section.fields;
+    let i = 0;
+    while (i < fields.length) {
+      if (fields[i].group) {
+        const g = fields[i].group, groupFields = [];
+        while (i < fields.length && fields[i].group === g) { groupFields.push(fields[i]); i++; }
+        sec.appendChild(await makeGroupCard(groupFields, page.file));
+      } else {
+        sec.appendChild(await makeRow(fields[i], page.file)); i++;
+      }
+    }
+
+    // Inline media die bij deze sectie hoort.
+    const secMedia = mediaItems.filter((m) => m.section === section.label);
+    if (secMedia.length) {
+      const mg = document.createElement('div');
+      mg.className = 'media-grid media-grid--inline';
+      for (const it of secMedia) mg.appendChild(await mediaCard(it, page.file));
+      sec.appendChild(mg);
+    }
     frag.appendChild(sec);
   }
   panel.innerHTML = '';
   panel.appendChild(frag);
 }
 
-async function makeRow(field, file) {
-  const { text: baseline, found } = await baselineFor(field, file);
-  const current = overrides[field.key];
-  const value = (current != null && current !== '') ? current : baseline;
+// Bouwt het bewerk-widget (tekstveld + teller + status + herstel) en koppelt
+// de wijzig-status aan de opslaan-balk. Hergebruikt door losse rijen én groepen.
+function makeEditor(field, baseline, found) {
   const max = field.max || Math.max(baseline.length, 0);
+  const value = (overrides[field.key] != null && overrides[field.key] !== '') ? overrides[field.key] : baseline;
 
-  const row = document.createElement('div');
-  row.className = 'row' + (found ? '' : ' row--missing');
-
-  const side = document.createElement('div');
-  side.className = 'row__side';
-  const label = document.createElement('div');
-  label.className = 'row__label'; label.textContent = field.label;
-  const cur = document.createElement('p');
-  cur.className = 'row__current';
-  cur.innerHTML = '<b>Nu</b>';
-  cur.appendChild(document.createTextNode(baseline || '—'));
-  side.append(label, cur);
-
-  const main = document.createElement('div');
-  main.className = 'row__main';
+  const wrap = document.createElement('div');
+  wrap.className = 'editor';
   const area = document.createElement('textarea');
   area.className = 'field__area';
   area.rows = Math.min(7, Math.max(1, Math.ceil((value.length || 1) / 52)));
@@ -315,9 +300,9 @@ async function makeRow(field, file) {
   status.className = 'row__status';
   const resetBtn = document.createElement('button');
   resetBtn.className = 'btn btn--ghost btn--sm';
-  resetBtn.textContent = 'Herstel origineel';
+  resetBtn.textContent = 'Herstel';
   foot.append(status, resetBtn);
-  main.append(area, count, foot);
+  wrap.append(area, count, foot);
 
   const updateCount = () => {
     const len = area.value.length;
@@ -327,25 +312,65 @@ async function makeRow(field, file) {
   const savedValue = () => { const ov = overrides[field.key]; return (ov != null && ov !== '') ? ov : baseline; };
   const refreshState = () => {
     updateCount();
-    const changed = found && area.value !== savedValue();
-    if (changed) {
+    if (found && area.value !== savedValue()) {
       pending.set(field.key, { value: area.value, baseline });
       status.textContent = 'Niet opgeslagen'; status.className = 'row__status is-dirty';
-      row.classList.add('row--dirty');
+      wrap.classList.add('is-dirty');
     } else {
       pending.delete(field.key);
       status.textContent = ''; status.className = 'row__status';
-      row.classList.remove('row--dirty');
+      wrap.classList.remove('is-dirty');
     }
     updateSaveBar();
   };
-
   updateCount();
   area.addEventListener('input', refreshState);
   resetBtn.addEventListener('click', () => { area.value = baseline; refreshState(); });
+  return { wrap, area };
+}
 
+// Losse rij: label + "Nu" links, invoer rechts (voor lange, op zichzelf staande teksten).
+async function makeRow(field, file) {
+  const { text: baseline, found } = await baselineFor(field, file);
+  const row = document.createElement('div');
+  row.className = 'row' + (found ? '' : ' row--missing');
+  const side = document.createElement('div');
+  side.className = 'row__side';
+  const label = document.createElement('div');
+  label.className = 'row__label'; label.textContent = field.label;
+  const cur = document.createElement('p');
+  cur.className = 'row__current';
+  cur.innerHTML = '<b>Nu</b>';
+  cur.appendChild(document.createTextNode(baseline || '—'));
+  side.append(label, cur);
+  const { wrap } = makeEditor(field, baseline, found);
+  const main = document.createElement('div');
+  main.className = 'row__main';
+  main.appendChild(wrap);
   row.append(side, main);
   return row;
+}
+
+// Compacte groepskaart: kop + korte velden naast elkaar.
+async function makeGroupCard(fields, file) {
+  const card = document.createElement('div');
+  card.className = 'group';
+  const title = document.createElement('div');
+  title.className = 'group__title'; title.textContent = fields[0].groupLabel || '';
+  const grid = document.createElement('div');
+  grid.className = 'group__fields';
+  card.append(title, grid);
+  for (const field of fields) {
+    const { text: baseline, found } = await baselineFor(field, file);
+    const mini = document.createElement('div');
+    mini.className = 'mini' + (field.wide ? ' mini--wide' : '') + (found ? '' : ' mini--missing');
+    const lab = document.createElement('div');
+    lab.className = 'mini__label'; lab.textContent = field.label;
+    const { wrap } = makeEditor(field, baseline, found);
+    mini.append(lab, wrap);
+    grid.appendChild(mini);
+  }
+  return card;
 }
 
 // ---- Onderbalk (alleen teksten) ----
@@ -373,7 +398,7 @@ function updateSaveBar() {
 }
 function discardAll() {
   pending.clear(); updateSaveBar();
-  if (activeTab !== 'cases' && activeView === 'tekst') renderTextPage(pageById(activeTab));
+  if (activeTab !== 'cases') renderTextPage(pageById(activeTab));
 }
 async function saveAll() {
   const items = [...pending.entries()];
@@ -404,26 +429,6 @@ async function saveAll() {
 // ---------------------------------------------------------------------
 //  Media
 // ---------------------------------------------------------------------
-async function renderMediaPage(id) {
-  panel.innerHTML = '<div class="loading">Media laden…</div>';
-  const page = pageById(id);
-  const items = MEDIA_M.pages[id].items;
-  const frag = document.createDocumentFragment();
-
-  const note = document.createElement('div');
-  note.className = 'note';
-  note.textContent = 'Vervang een foto door een nieuwe te uploaden. Laat voor het beste resultaat dezelfde verhouding aanhouden als de huidige foto.';
-  frag.appendChild(note);
-
-  const grid = document.createElement('div');
-  grid.className = 'media-grid';
-  for (const item of items) grid.appendChild(await mediaCard(item, page.file));
-  frag.appendChild(grid);
-
-  panel.innerHTML = '';
-  panel.appendChild(frag);
-}
-
 async function mediaCard(item, file) {
   const baseline = await mediaBaseline(item, file);
   const override = mediaOverrides[item.key];
