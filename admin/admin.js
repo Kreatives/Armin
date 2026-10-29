@@ -5,6 +5,7 @@ const cfg = window.CMS_CONFIG;
 const TEXTS = cfg.tables.texts;
 const CASES = cfg.tables.cases;
 const MEDIA = cfg.tables.media;
+const CASE_MEDIA = cfg.tables.caseMedia;
 const BUCKET = cfg.bucket;
 const M = window.CMS_MANIFEST;
 const MEDIA_M = window.CMS_MEDIA;
@@ -650,6 +651,15 @@ function caseCard(c, index) {
   logoWrap.appendChild(logoRow);
   body.appendChild(logoWrap);
 
+  // Media (foto's/video's) per case
+  const mediaWrap = document.createElement('div');
+  mediaWrap.className = 'field field--full';
+  mediaWrap.innerHTML = '<span class="field__label">Media (foto’s / video’s)</span>';
+  const mediaMount = document.createElement('div');
+  mediaWrap.appendChild(mediaMount);
+  body.appendChild(mediaWrap);
+  renderCaseMediaSection(c.slug, mediaMount);
+
   // Soort dienst (multiselect uit vaste lijst)
   const catWrap = document.createElement('div');
   catWrap.className = 'field field--full';
@@ -740,6 +750,163 @@ async function uploadCaseLogo(c, file, els) {
   } finally {
     els.logoBtn.disabled = false;
   }
+}
+
+// --- Per-case media ----------------------------------------------------
+// Schijf-media van een case (uit cases.js baseline): cover + overige media.
+function diskMediaFor(slug) {
+  const base = (window.CASES || []).find((c) => c.slug === slug);
+  if (!base) return [];
+  const list = [];
+  if (base.cover && base.cover.src) list.push({ src: base.cover.src, portrait: !!base.cover.portrait });
+  (base.media || []).forEach((m) => list.push({ src: m.src, portrait: !!m.portrait }));
+  return list.map((m) => ({ ...m, kind: /\.mp4$/i.test(m.src) ? 'video' : 'image' }));
+}
+
+function detectPortraitKind(file) {
+  const kind = (file.type || '').startsWith('video') ? 'video' : 'image';
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const done = (portrait) => { URL.revokeObjectURL(url); resolve({ portrait, kind }); };
+    if (kind === 'video') {
+      const v = document.createElement('video');
+      v.onloadedmetadata = () => done(v.videoHeight > v.videoWidth);
+      v.onerror = () => done(false); v.src = url;
+    } else {
+      const img = new Image();
+      img.onload = () => done(img.naturalHeight > img.naturalWidth);
+      img.onerror = () => done(false); img.src = url;
+    }
+  });
+}
+
+function mediaThumbEl(item) {
+  const thumb = document.createElement('div');
+  thumb.className = 'cmedia__thumb' + (item.portrait ? ' is-portrait' : '');
+  const src = displaySrc(item.src || item.url);
+  if ((item.kind || '') === 'video') {
+    const v = document.createElement('video');
+    v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+    thumb.appendChild(v);
+  } else {
+    const img = document.createElement('img'); img.src = src; img.loading = 'lazy';
+    thumb.appendChild(img);
+  }
+  return thumb;
+}
+
+async function renderCaseMediaSection(slug, mount) {
+  mount.innerHTML = '<div class="loading" style="padding:10px 0">Media laden…</div>';
+  const { data, error } = await sb.from(CASE_MEDIA).select('*').eq('slug', slug).order('sort_order', { ascending: true });
+  if (error) { mount.innerHTML = `<div class="note">Kon media niet laden: ${error.message}</div>`; return; }
+  const rows = data || [];
+  const disk = diskMediaFor(slug);
+  mount.innerHTML = '';
+
+  const grid = document.createElement('div');
+  grid.className = 'media-grid media-grid--inline';
+
+  if (rows.length) {
+    rows.forEach((m, i) => {
+      const card = document.createElement('div');
+      card.className = 'cmedia';
+      card.appendChild(mediaThumbEl(m));
+      const bar = document.createElement('div');
+      bar.className = 'cmedia__bar';
+      const up = document.createElement('button'); up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
+      const down = document.createElement('button'); down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
+      const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
+      up.addEventListener('click', () => moveCaseMedia(rows, i, -1, slug, mount));
+      down.addEventListener('click', () => moveCaseMedia(rows, i, 1, slug, mount));
+      del.addEventListener('click', async () => {
+        if (!confirm('Deze media verwijderen?')) return;
+        const { error: e } = await sb.from(CASE_MEDIA).delete().eq('id', m.id);
+        if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
+        renderCaseMediaSection(slug, mount);
+      });
+      bar.append(up, down, del);
+      card.appendChild(bar);
+      grid.appendChild(card);
+    });
+    mount.appendChild(grid);
+  } else if (disk.length) {
+    const note = document.createElement('div');
+    note.className = 'note';
+    note.textContent = 'Deze media staat nu op schijf. Klik "Overnemen" om ze in het CMS te kunnen herordenen, verwijderen en aanvullen.';
+    mount.appendChild(note);
+    disk.forEach((m) => { const card = document.createElement('div'); card.className = 'cmedia'; card.appendChild(mediaThumbEl(m)); grid.appendChild(card); });
+    mount.appendChild(grid);
+  } else {
+    const p = document.createElement('p');
+    p.className = 'row__current'; p.textContent = 'Nog geen media.';
+    mount.appendChild(p);
+  }
+
+  // Acties
+  const actions = document.createElement('div');
+  actions.className = 'cmedia__actions';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*,video/*'; fileInput.hidden = true;
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn--primary btn--sm'; addBtn.type = 'button'; addBtn.textContent = '+ Media toevoegen';
+  addBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files[0];
+    if (file) addCaseMedia(slug, file, rows, disk, mount, addBtn);
+    fileInput.value = '';
+  });
+  actions.append(addBtn, fileInput);
+  if (!rows.length && disk.length) {
+    const take = document.createElement('button');
+    take.className = 'btn btn--sm'; take.type = 'button'; take.textContent = 'Overnemen om te bewerken';
+    take.addEventListener('click', async () => {
+      take.disabled = true; take.textContent = 'Bezig…';
+      try { await importDiskMedia(slug, disk); renderCaseMediaSection(slug, mount); }
+      catch (e) { take.disabled = false; take.textContent = 'Overnemen om te bewerken'; toast('Overnemen mislukt: ' + e.message, true); }
+    });
+    actions.appendChild(take);
+  }
+  mount.appendChild(actions);
+}
+
+async function importDiskMedia(slug, disk) {
+  const rows = disk.map((m, i) => ({ slug, url: m.src, kind: m.kind, portrait: m.portrait, sort_order: i }));
+  const { error } = await sb.from(CASE_MEDIA).insert(rows);
+  if (error) throw error;
+}
+
+async function addCaseMedia(slug, file, rows, disk, mount, btn) {
+  btn.disabled = true; btn.textContent = 'Uploaden…';
+  try {
+    // Eerst schijf-media overnemen zodat die niet verdwijnt.
+    let base = rows;
+    if (!rows.length && disk.length) { await importDiskMedia(slug, disk); base = disk.map((_, i) => ({ sort_order: i })); }
+    const maxOrder = base.reduce((m, r) => Math.max(m, r.sort_order || 0), -1);
+    const { portrait, kind } = await detectPortraitKind(file);
+    const ext = (file.name.split('.').pop() || (kind === 'video' ? 'mp4' : 'jpg')).toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = 'case-media-' + slug + '-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from(CASE_MEDIA).insert({ slug, url, kind, portrait, sort_order: maxOrder + 1 });
+    if (error) throw error;
+    toast('Media toegevoegd ✓');
+    renderCaseMediaSection(slug, mount);
+  } catch (e) {
+    toast('Toevoegen mislukt: ' + e.message, true);
+    btn.disabled = false; btn.textContent = '+ Media toevoegen';
+  }
+}
+
+async function moveCaseMedia(rows, index, dir, slug, mount) {
+  const j = index + dir;
+  if (j < 0 || j >= rows.length) return;
+  const a = rows[index], b = rows[j];
+  await Promise.all([
+    sb.from(CASE_MEDIA).update({ sort_order: b.sort_order }).eq('id', a.id),
+    sb.from(CASE_MEDIA).update({ sort_order: a.sort_order }).eq('id', b.id),
+  ]);
+  renderCaseMediaSection(slug, mount);
 }
 
 // Eenvoudige tag-editor (chips + invoer).

@@ -234,6 +234,14 @@ body {
 .chip__x { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; }
 .chips__input { border: none; outline: none; flex: 1; min-width: 120px; font: inherit; background: transparent; padding: 4px; }
 
+/* Per-case media-tegels */
+.cmedia { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #000; display: flex; flex-direction: column; }
+.cmedia__thumb { aspect-ratio: 16 / 10; background: #000; }
+.cmedia__thumb.is-portrait { aspect-ratio: 3 / 4; }
+.cmedia__thumb img, .cmedia__thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cmedia__bar { display: flex; gap: 4px; padding: 6px; justify-content: center; background: var(--surface); }
+.cmedia__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
 /* Popup-curatie rij */
 .poprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
 .poprow__name { font-weight: 600; }

@@ -28,12 +28,13 @@ async function fetchData() {
   // Supabase-client pas hier laden, zodat een geblokkeerde CDN de site niet breekt.
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
   const sb = createClient(cfg.url, cfg.anonKey, { auth: { persistSession: false } });
-  const [texts, cases, media] = await Promise.all([
+  const [texts, cases, media, caseMedia] = await Promise.all([
     sb.from(cfg.tables.texts).select('key,value'),
     sb.from(cfg.tables.cases).select('*').eq('published', true).order('sort_order', { ascending: true }),
     sb.from(cfg.tables.media).select('key,url'),
+    sb.from(cfg.tables.caseMedia).select('slug,url,kind,portrait,sort_order').order('sort_order', { ascending: true }),
   ]);
-  return { texts: texts.data || [], cases: cases.data || [], media: media.data || [] };
+  return { texts: texts.data || [], cases: cases.data || [], media: media.data || [], caseMedia: caseMedia.data || [] };
 }
 
 // --- Media-overrides toepassen (foto's die in de pagina zitten) --------
@@ -74,15 +75,32 @@ function applyTexts(rows) {
 }
 
 // --- Cases samenvoegen met de baseline-media (per slug) ----------------
-function mergeCases(dbCases) {
+function mergeCases(dbCases, caseMediaRows) {
   if (!dbCases.length) return;                 // niets in DB (of time-out): baseline blijft
   const baseline = {};
   (window.CASES || []).forEach((c) => { baseline[c.slug] = c; });
   const FALLBACK_COVER = { src: 'assets/video/showreel.mp4', portrait: false };
   const FALLBACK_POSTER = 'assets/video/showreel-poster.webp';
 
+  // CMS-media per slug (indien aanwezig overschrijft dit de schijf-media).
+  const cmBySlug = {};
+  (caseMediaRows || []).forEach((m) => { (cmBySlug[m.slug] = cmBySlug[m.slug] || []).push(m); });
+
   const merged = dbCases.map((c) => {
     const base = baseline[c.slug] || {};
+    const cm = cmBySlug[c.slug];
+    let cover, thumb, media;
+    if (cm && cm.length) {
+      const items = cm.map((m) => ({ src: m.url, portrait: !!m.portrait, kind: m.kind }));
+      cover = items[0];
+      media = items.slice(1);
+      const firstImg = items.find((it) => it.kind !== 'video');
+      thumb = firstImg ? firstImg.src : (base.thumb || FALLBACK_POSTER);
+    } else {
+      cover = base.cover || FALLBACK_COVER;
+      thumb = base.thumb || FALLBACK_POSTER;
+      media = base.media || [];
+    }
     return {
       slug: c.slug,
       brand: c.brand || base.brand || c.title || '',
@@ -104,11 +122,11 @@ function mergeCases(dbCases) {
       services_list: Array.isArray(c.services_list) ? c.services_list : [],
       highlighted: c.highlighted !== false,
       in_popup: c.in_popup !== false,
-      // media/logo: geüpload logo heeft voorrang, anders de baseline op schijf
-      cover: base.cover || FALLBACK_COVER,
-      thumb: base.thumb || FALLBACK_POSTER,
+      // media: CMS-media indien aanwezig, anders de baseline op schijf
+      cover: cover,
+      thumb: thumb,
       logo: c.logo || base.logo || null,
-      media: base.media || [],
+      media: media,
     };
   });
 
@@ -140,7 +158,7 @@ async function startPage() {
     if (res && !res.__timeout) {
       applyTexts(res.texts);
       applyMedia(res.media);
-      mergeCases(res.cases);
+      mergeCases(res.cases, res.caseMedia);
     } else {
       window.CMS_TEXT = window.CMS_TEXT || {};
     }
