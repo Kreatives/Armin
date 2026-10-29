@@ -219,8 +219,9 @@ body {
 
 /* Logo-upload in een case */
 .logo-row { display: flex; align-items: center; gap: 12px; }
-.logo-thumb { width: 64px; height: 64px; border: 1px solid var(--line); border-radius: 9px; background: #f3f4f6 center/contain no-repeat; display: grid; place-items: center; overflow: hidden; flex: none; }
+.logo-thumb { width: 72px; height: 72px; border: 1px solid var(--line); border-radius: 9px; background: #1c1f24; display: grid; place-items: center; overflow: hidden; flex: none; padding: 8px; }
 .logo-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo-thumb.is-empty { background: #f3f4f6; }
 .logo-thumb.is-empty::after { content: 'geen'; color: var(--muted-2); font-size: 11px; }
 
 /* Soort dienst checkboxes */

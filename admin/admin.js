@@ -635,19 +635,34 @@ function caseCard(c, index) {
   const logoThumb = document.createElement('div');
   logoThumb.className = 'logo-thumb';
   const logoImg = document.createElement('img');
-  if (c.logo) logoImg.src = c.logo; else logoThumb.classList.add('is-empty');
+  const diskLogo = diskLogoFor(c.slug);
+  const effLogo = c.logo || diskLogo;
+  if (effLogo) logoImg.src = displaySrc(effLogo); else logoThumb.classList.add('is-empty');
   logoThumb.appendChild(logoImg);
   const logoInput = document.createElement('input');
   logoInput.type = 'file'; logoInput.accept = 'image/*'; logoInput.hidden = true;
   const logoBtn = document.createElement('button');
-  logoBtn.className = 'btn btn--sm'; logoBtn.type = 'button'; logoBtn.textContent = c.logo ? 'Vervang logo' : 'Upload logo';
+  logoBtn.className = 'btn btn--sm'; logoBtn.type = 'button'; logoBtn.textContent = effLogo ? 'Vervang logo' : 'Upload logo';
   logoBtn.addEventListener('click', () => logoInput.click());
+  const logoReset = document.createElement('button');
+  logoReset.className = 'btn btn--ghost btn--sm'; logoReset.type = 'button'; logoReset.textContent = 'Herstel'; logoReset.hidden = !c.logo;
+  logoReset.addEventListener('click', async () => {
+    const { error } = await sb.from(CASES).update({ logo: null }).eq('id', c.id);
+    if (error) { toast('Herstellen mislukt: ' + error.message, true); return; }
+    c.logo = null;
+    const dl = diskLogoFor(c.slug);
+    if (dl) { logoImg.src = displaySrc(dl); logoThumb.classList.remove('is-empty'); }
+    else { logoImg.removeAttribute('src'); logoThumb.classList.add('is-empty'); }
+    logoBtn.textContent = dl ? 'Vervang logo' : 'Upload logo';
+    logoReset.hidden = true;
+    toast('Logo hersteld');
+  });
   logoInput.addEventListener('change', () => {
     const file = logoInput.files[0];
-    if (file) uploadCaseLogo(c, file, { logoImg, logoThumb, logoBtn });
+    if (file) uploadCaseLogo(c, file, { logoImg, logoThumb, logoBtn, logoReset });
     logoInput.value = '';
   });
-  logoRow.append(logoThumb, logoBtn, logoInput);
+  logoRow.append(logoThumb, logoBtn, logoReset, logoInput);
   logoWrap.appendChild(logoRow);
   body.appendChild(logoWrap);
 
@@ -743,6 +758,7 @@ async function uploadCaseLogo(c, file, els) {
     if (error) throw error;
     c.logo = url; els.logoImg.src = url; els.logoThumb.classList.remove('is-empty');
     els.logoBtn.textContent = 'Vervang logo';
+    if (els.logoReset) els.logoReset.hidden = false;
     toast('Logo geüpload ✓');
   } catch (e) {
     els.logoBtn.textContent = 'Upload logo';
@@ -750,6 +766,12 @@ async function uploadCaseLogo(c, file, els) {
   } finally {
     els.logoBtn.disabled = false;
   }
+}
+
+// Schijf-logo van een case (uit cases.js baseline), indien aanwezig.
+function diskLogoFor(slug) {
+  const base = (window.CASES || []).find((c) => c.slug === slug);
+  return base && base.logo ? base.logo : null;
 }
 
 // --- Per-case media ----------------------------------------------------
