@@ -239,40 +239,13 @@
         ],
       },
       {
-        id: 'case', label: 'Case-detail (algemene teksten)', file: 'case.html',
-        note: 'Deze teksten zijn gelijk op elke case-pagina. De titel, samenvatting en metadata per case beheer je bij Cases.',
+        id: 'case', label: 'Case-detail (labels)', file: 'case.html',
+        note: 'De inhoud per case (naam, intro, tekst, metadata, media) beheer je bij Cases. Hier staan alleen de vaste labels die op elke case-pagina gelijk zijn.',
         sections: [
-          { label: 'Vaste onderdelen', fields: [
+          { label: 'Vaste labels', fields: [
             ...grp('case-labels', 'Labels', [
-              f('case.hero.label',   'Label boven titel',      null, { mode: 'virtual', default: 'Case' }),
-              f('case.next.eyebrow', 'Label "volgende case"',  null, { mode: 'virtual', default: 'Next case' }),
-            ]),
-          ]},
-          { label: 'Sectie 01', fields: [
-            f('case.s1.title', 'Titel', null, { mode: 'virtual', default: 'The brief' }),
-            ...grp('case-s1', 'Alinea’s', [
-              f('case.s1.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM1, wide: true }),
-              f('case.s1.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM2, wide: true }),
-            ]),
-          ]},
-          { label: 'Sectie 02', fields: [
-            f('case.s2.title', 'Titel', null, { mode: 'virtual', default: 'The approach' }),
-            ...grp('case-s2', 'Alinea’s', [
-              f('case.s2.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM3, wide: true }),
-              f('case.s2.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM4, wide: true }),
-            ]),
-          ]},
-          { label: 'Citaat', fields: [
-            ...grp('case-quote', 'Citaat', [
-              f('case.quote.text', 'Citaat', null, { mode: 'virtual', default: 'Football is the language, culture is the story', wide: true }),
-              f('case.quote.cite', 'Bron',   null, { mode: 'virtual', default: '— Armin Shah' }),
-            ]),
-          ]},
-          { label: 'Sectie 03', fields: [
-            f('case.s3.title', 'Titel', null, { mode: 'virtual', default: 'The result' }),
-            ...grp('case-s3', 'Alinea’s', [
-              f('case.s3.p1', 'Alinea 1', null, { mode: 'virtual', default: LOREM5, wide: true }),
-              f('case.s3.p2', 'Alinea 2', null, { mode: 'virtual', default: LOREM6, wide: true }),
+              f('case.hero.label',   'Label boven titel',     null, { mode: 'virtual', default: 'Case' }),
+              f('case.next.eyebrow', 'Label "volgende case"', null, { mode: 'virtual', default: 'Next case' }),
             ]),
           ]},
         ],

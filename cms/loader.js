@@ -80,7 +80,7 @@ function mergeCases(dbCases) {
     const base = baseline[c.slug] || {};
     return {
       slug: c.slug,
-      brand: c.brand || base.brand || '',
+      brand: c.brand || base.brand || c.title || '',
       title: c.title || base.title || '',
       sub: c.sub || base.sub || '',
       tags: Array.isArray(c.tags) ? c.tags : (base.tags || []),
@@ -89,11 +89,20 @@ function mergeCases(dbCases) {
       role: c.role || base.role || '',
       services: c.services || base.services || '',
       summary: c.summary || base.summary || '',
+      // Rijkere per-case velden (brief)
+      intro: c.intro || '',
+      body: c.body || '',
+      publisher: c.publisher || '',
+      agency_partner: c.agency_partner || '',
+      project_type: c.project_type || '',
+      service_category: Array.isArray(c.service_category) ? c.service_category : [],
+      services_list: Array.isArray(c.services_list) ? c.services_list : [],
       highlighted: c.highlighted !== false,
-      // media komt altijd van de baseline (bestanden op schijf)
+      in_popup: c.in_popup !== false,
+      // media/logo: geüpload logo heeft voorrang, anders de baseline op schijf
       cover: base.cover || FALLBACK_COVER,
       thumb: base.thumb || FALLBACK_POSTER,
-      logo: base.logo || null,
+      logo: c.logo || base.logo || null,
       media: base.media || [],
     };
   });

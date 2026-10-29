@@ -166,6 +166,7 @@ function buildNav() {
   g2.className = 'nav__group';
   g2.innerHTML = '<div class="nav__title">Content</div>';
   g2.appendChild(navItem('cases', 'Cases', ICONS.grid));
+  g2.appendChild(navItem('popup', 'Cases-popup', ICONS.grid));
   navEl.append(g1, g2);
 }
 function navItem(id, label, ico) {
@@ -212,6 +213,8 @@ function renderHeader() {
     add.textContent = '+ Nieuwe case';
     add.addEventListener('click', addCase);
     right.appendChild(add);
+  } else if (activeTab === 'popup') {
+    title.textContent = 'Cases-popup';
   } else {
     const page = pageById(activeTab);
     title.textContent = page.label;
@@ -228,6 +231,7 @@ function renderHeader() {
 
 function renderBody() {
   if (activeTab === 'cases') return renderCases();
+  if (activeTab === 'popup') return renderPopup();
   return renderTextPage(pageById(activeTab));
 }
 
@@ -521,16 +525,17 @@ async function resetMedia(item, baseline, els) {
 // ---------------------------------------------------------------------
 //  Cases
 // ---------------------------------------------------------------------
-const CASE_FIELDS = [
-  { k: 'title', label: 'Titel' },
-  { k: 'brand', label: 'Merk (hoofdletters)' },
-  { k: 'sub', label: 'Subtitel' },
-  { k: 'tags', label: 'Tags (komma-gescheiden)' },
+const SERVICE_CATS = ['Creative Strategy', 'Format & IP', 'Football & Culture', 'Creative Direction', 'Partnerships'];
+const CASE_TEXT_FIELDS = [
+  { k: 'title', label: 'Naam' },
+  { k: 'sub', label: 'Subtitel (homepage-kaart)' },
   { k: 'client', label: 'Client' },
-  { k: 'date', label: 'Jaar' },
+  { k: 'publisher', label: 'Publisher' },
+  { k: 'agency_partner', label: 'Agency partner' },
+  { k: 'project_type', label: 'Project type' },
   { k: 'role', label: 'Rol' },
-  { k: 'services', label: 'Services' },
-  { k: 'summary', label: 'Samenvatting', full: true, area: true },
+  { k: 'intro', label: 'Intro', area: true, full: true },
+  { k: 'body', label: 'Tekst (extra alinea’s, optioneel)', area: true, full: true },
 ];
 let casesData = [];
 
@@ -542,7 +547,7 @@ async function renderCases() {
   panel.innerHTML = '';
   const note = document.createElement('div');
   note.className = 'note';
-  note.textContent = 'Media (foto’s/video’s) staan in assets/cases/<slug>/ en worden via de slug gekoppeld. "Op homepage" bepaalt of de case in de carousel op de homepage staat.';
+  note.textContent = 'Logo kun je hier uploaden. Foto’s/video’s staan nog in assets/cases/<slug>/ (per-case uploaden volgt). "Soort dienst" bepaalt onder welke groep de case in de cases-popup valt.';
   panel.appendChild(note);
   casesData.forEach((c, i) => panel.appendChild(caseCard(c, i)));
 }
@@ -559,7 +564,9 @@ function caseCard(c, index) {
   const flags = document.createElement('span');
   flags.className = 'case__flags';
   const renderFlags = (o) => { flags.innerHTML =
-    `<span class="flag ${o.highlighted ? 'on' : ''}">home</span><span class="flag ${o.published ? 'on' : ''}">live</span>`; };
+    `<span class="flag ${o.highlighted ? 'on' : ''}">home</span>` +
+    `<span class="flag ${o.in_popup ? 'on' : ''}">popup</span>` +
+    `<span class="flag ${o.published ? 'on' : ''}">live</span>`; };
   renderFlags(c);
   const up = document.createElement('button');
   up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
@@ -573,27 +580,81 @@ function caseCard(c, index) {
   const body = document.createElement('div');
   body.className = 'case__body';
   const inputs = {};
-  CASE_FIELDS.forEach((f) => {
+  CASE_TEXT_FIELDS.forEach((f) => {
     const wrap = document.createElement('label');
     wrap.className = 'field' + (f.full ? ' field--full' : '');
     const lab = document.createElement('span');
     lab.className = 'field__label'; lab.textContent = f.label;
     let input;
-    if (f.area) { input = document.createElement('textarea'); input.className = 'field__area'; input.rows = 3; }
+    if (f.area) { input = document.createElement('textarea'); input.className = 'field__area'; input.rows = f.k === 'intro' ? 4 : 3; }
     else { input = document.createElement('input'); input.className = 'field__input'; input.type = 'text'; }
-    input.value = f.k === 'tags' ? (c.tags || []).join(', ') : (c[f.k] || '');
+    input.value = c[f.k] || '';
     inputs[f.k] = input;
     wrap.append(lab, input);
     body.appendChild(wrap);
   });
 
+  // Logo-upload
+  const logoWrap = document.createElement('div');
+  logoWrap.className = 'field field--full';
+  logoWrap.innerHTML = '<span class="field__label">Logo</span>';
+  const logoRow = document.createElement('div');
+  logoRow.className = 'logo-row';
+  const logoThumb = document.createElement('div');
+  logoThumb.className = 'logo-thumb';
+  const logoImg = document.createElement('img');
+  if (c.logo) logoImg.src = c.logo; else logoThumb.classList.add('is-empty');
+  logoThumb.appendChild(logoImg);
+  const logoInput = document.createElement('input');
+  logoInput.type = 'file'; logoInput.accept = 'image/*'; logoInput.hidden = true;
+  const logoBtn = document.createElement('button');
+  logoBtn.className = 'btn btn--sm'; logoBtn.type = 'button'; logoBtn.textContent = c.logo ? 'Vervang logo' : 'Upload logo';
+  logoBtn.addEventListener('click', () => logoInput.click());
+  logoInput.addEventListener('change', () => {
+    const file = logoInput.files[0];
+    if (file) uploadCaseLogo(c, file, { logoImg, logoThumb, logoBtn });
+    logoInput.value = '';
+  });
+  logoRow.append(logoThumb, logoBtn, logoInput);
+  logoWrap.appendChild(logoRow);
+  body.appendChild(logoWrap);
+
+  // Soort dienst (multiselect uit vaste lijst)
+  const catWrap = document.createElement('div');
+  catWrap.className = 'field field--full';
+  catWrap.innerHTML = '<span class="field__label">Soort dienst (voor de cases-popup)</span>';
+  const catBox = document.createElement('div');
+  catBox.className = 'catbox';
+  const catInputs = {};
+  SERVICE_CATS.forEach((cat) => {
+    const l = document.createElement('label');
+    l.className = 'chip-check';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = (c.service_category || []).includes(cat);
+    catInputs[cat] = cb;
+    const sp = document.createElement('span'); sp.textContent = cat;
+    l.append(cb, sp); catBox.appendChild(l);
+  });
+  catWrap.appendChild(catBox);
+  body.appendChild(catWrap);
+
+  // Services (meerdere vrije tags)
+  const svcWrap = document.createElement('div');
+  svcWrap.className = 'field field--full';
+  svcWrap.innerHTML = '<span class="field__label">Services (meerdere — Enter of komma om toe te voegen)</span>';
+  const tags = makeTagEditor(c.services_list || []);
+  svcWrap.appendChild(tags.el);
+  body.appendChild(svcWrap);
+
+  // Acties
   const actions = document.createElement('div');
   actions.className = 'case__actions';
   const toggles = document.createElement('div');
   toggles.className = 'case__toggles';
   const hl = toggle('Op homepage', c.highlighted);
+  const pop = toggle('In popup', c.in_popup);
   const pub = toggle('Live op site', c.published);
-  toggles.append(hl.el, pub.el);
+  toggles.append(hl.el, pop.el, pub.el);
   const save = document.createElement('button');
   save.className = 'btn btn--primary btn--sm'; save.textContent = 'Opslaan';
   const del = document.createElement('button');
@@ -604,21 +665,21 @@ function caseCard(c, index) {
 
   save.addEventListener('click', async () => {
     save.disabled = true; save.textContent = 'Opslaan…';
-    const patch = {
-      title: inputs.title.value.trim(), brand: inputs.brand.value.trim(),
-      sub: inputs.sub.value.trim(),
-      tags: inputs.tags.value.split(',').map((t) => t.trim()).filter(Boolean),
-      client: inputs.client.value.trim(), date: inputs.date.value.trim(),
-      role: inputs.role.value.trim(), services: inputs.services.value.trim(),
-      summary: inputs.summary.value.trim(),
-      highlighted: hl.input.checked, published: pub.input.checked,
-    };
+    const cats = SERVICE_CATS.filter((cat) => catInputs[cat].checked);
+    const patch = {};
+    CASE_TEXT_FIELDS.forEach((f) => { patch[f.k] = inputs[f.k].value.trim(); });
+    patch.service_category = cats;
+    patch.services = cats[0] || '';          // string voor de overlay-groepering
+    patch.services_list = tags.getValues();
+    patch.highlighted = hl.input.checked;
+    patch.in_popup = pop.input.checked;
+    patch.published = pub.input.checked;
     const { error } = await sb.from(CASES).update(patch).eq('id', c.id);
     save.disabled = false; save.textContent = 'Opslaan';
     if (error) { toast('Opslaan mislukt: ' + error.message, true); return; }
     toast('Case opgeslagen ✓');
     Object.assign(c, patch);
-    title.textContent = patch.title || c.slug; renderFlags(patch);
+    title.textContent = patch.title || c.slug; renderFlags(c);
   });
   del.addEventListener('click', async () => {
     if (!confirm(`Case "${c.title || c.slug}" definitief verwijderen?`)) return;
@@ -627,6 +688,112 @@ function caseCard(c, index) {
     toast('Case verwijderd'); renderCases();
   });
   return card;
+}
+
+async function uploadCaseLogo(c, file, els) {
+  els.logoBtn.disabled = true; els.logoBtn.textContent = 'Uploaden…';
+  try {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = 'case-logo-' + c.slug + '-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    const { error } = await sb.from(CASES).update({ logo: url }).eq('id', c.id);
+    if (error) throw error;
+    c.logo = url; els.logoImg.src = url; els.logoThumb.classList.remove('is-empty');
+    els.logoBtn.textContent = 'Vervang logo';
+    toast('Logo geüpload ✓');
+  } catch (e) {
+    els.logoBtn.textContent = 'Upload logo';
+    toast('Logo uploaden mislukt: ' + e.message, true);
+  } finally {
+    els.logoBtn.disabled = false;
+  }
+}
+
+// Eenvoudige tag-editor (chips + invoer).
+function makeTagEditor(initial) {
+  const el = document.createElement('div');
+  el.className = 'chips';
+  const values = [...(initial || [])];
+  const input = document.createElement('input');
+  input.className = 'chips__input'; input.type = 'text'; input.placeholder = 'Service toevoegen…';
+
+  function draw() {
+    [...el.querySelectorAll('.chip')].forEach((x) => x.remove());
+    values.forEach((v, i) => {
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.textContent = v;
+      const x = document.createElement('button');
+      x.type = 'button'; x.className = 'chip__x'; x.textContent = '×';
+      x.addEventListener('click', () => { values.splice(i, 1); draw(); });
+      chip.appendChild(x);
+      el.insertBefore(chip, input);
+    });
+  }
+  function add(raw) {
+    raw.split(',').map((s) => s.trim()).filter(Boolean).forEach((v) => { if (!values.includes(v)) values.push(v); });
+    input.value = ''; draw();
+  }
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') { e.preventDefault(); add(input.value); }
+    else if (e.key === 'Backspace' && !input.value && values.length) { values.pop(); draw(); }
+  });
+  input.addEventListener('blur', () => { if (input.value.trim()) add(input.value); });
+  el.appendChild(input);
+  draw();
+  return { el, getValues: () => values.slice() };
+}
+
+// ---------------------------------------------------------------------
+//  Cases-popup (curatie per soort dienst)
+// ---------------------------------------------------------------------
+async function renderPopup() {
+  panel.innerHTML = '<div class="loading">Laden…</div>';
+  const { data, error } = await sb.from(CASES).select('*').order('sort_order', { ascending: true });
+  if (error) { panel.innerHTML = `<div class="note">Kon cases niet laden: ${error.message}</div>`; return; }
+  const cases = data || [];
+  panel.innerHTML = '';
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = 'Vink aan welke cases in de cases-popup (overlay) verschijnen, gegroepeerd per soort dienst. Soort dienst stel je per case in onder "Cases".';
+  panel.appendChild(note);
+
+  const groups = SERVICE_CATS.map((cat) => ({ cat, items: cases.filter((c) => (c.service_category || []).includes(cat)) }));
+  const ungrouped = cases.filter((c) => !(c.service_category || []).length);
+  if (ungrouped.length) groups.push({ cat: 'Zonder soort dienst', items: ungrouped });
+
+  groups.forEach((g) => {
+    const sec = document.createElement('section');
+    sec.className = 'section';
+    const h = document.createElement('h2');
+    h.className = 'section__title'; h.textContent = g.cat;
+    sec.appendChild(h);
+    if (!g.items.length) {
+      const p = document.createElement('p');
+      p.className = 'row__current'; p.style.padding = '2px 2px 6px'; p.textContent = 'Geen cases.';
+      sec.appendChild(p);
+    }
+    g.items.forEach((c) => sec.appendChild(popupRow(c)));
+    panel.appendChild(sec);
+  });
+}
+
+function popupRow(c) {
+  const row = document.createElement('div');
+  row.className = 'poprow';
+  const name = document.createElement('span');
+  name.className = 'poprow__name'; name.textContent = c.title || c.slug;
+  const t = toggle('In popup', c.in_popup);
+  t.input.addEventListener('change', async () => {
+    const { error } = await sb.from(CASES).update({ in_popup: t.input.checked }).eq('id', c.id);
+    if (error) { toast('Opslaan mislukt: ' + error.message, true); t.input.checked = !t.input.checked; return; }
+    c.in_popup = t.input.checked;
+    toast(t.input.checked ? 'Toegevoegd aan popup' : 'Verwijderd uit popup');
+  });
+  row.append(name, t.el);
+  return row;
 }
 
 function toggle(label, checked) {

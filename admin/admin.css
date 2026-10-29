@@ -216,6 +216,27 @@ body {
 .case__toggles { display: flex; gap: 16px; align-items: center; margin-right: auto; }
 .toggle { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); cursor: pointer; }
 
+/* Logo-upload in een case */
+.logo-row { display: flex; align-items: center; gap: 12px; }
+.logo-thumb { width: 64px; height: 64px; border: 1px solid var(--line); border-radius: 9px; background: #f3f4f6 center/contain no-repeat; display: grid; place-items: center; overflow: hidden; flex: none; }
+.logo-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.logo-thumb.is-empty::after { content: 'geen'; color: var(--muted-2); font-size: 11px; }
+
+/* Soort dienst checkboxes */
+.catbox { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip-check { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--muted); }
+.chip-check input { accent-color: var(--accent); }
+
+/* Services-tags */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; border: 1px solid var(--line); border-radius: 9px; padding: 8px; background: var(--surface); }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-soft); color: var(--accent); border-radius: 999px; padding: 4px 6px 4px 11px; font-size: 13px; font-weight: 600; }
+.chip__x { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 15px; line-height: 1; padding: 0 2px; }
+.chips__input { border: none; outline: none; flex: 1; min-width: 120px; font: inherit; background: transparent; padding: 4px; }
+
+/* Popup-curatie rij */
+.poprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
+.poprow__name { font-weight: 600; }
+
 /* ---- Onderbalk ---- */
 .savebar {
   position: fixed; left: 248px; right: 0; bottom: 0; z-index: 40;

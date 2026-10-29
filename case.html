@@ -84,23 +84,10 @@
     var next = cases[(idx + 1) % cases.length];
     document.title = c.title + ' — Armin Shah';
 
-    /* Vaste, gedeelde body-copy -> elke case identieke opbouw */
-    var SECTIONS = [
-      { index: '01', title: t('case.s1.title', 'The brief'), body:
-        [t('case.s1.p1', 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.'),
-         t('case.s1.p2', 'Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt.')] },
-      { index: '02', title: t('case.s2.title', 'The approach'), body:
-        [t('case.s2.p1', 'Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.'),
-         t('case.s2.p2', 'Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.')] },
-      { index: '03', title: t('case.s3.title', 'The result'), body:
-        [t('case.s3.p1', 'At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi sint occaecati cupiditate non provident.'),
-         t('case.s3.p2', 'Et harum quidem rerum facilis est et expedita distinctio. Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus id quod maxime placeat.')] }
-    ];
-    var QUOTE = { text: t('case.quote.text', 'Football is the language, culture is the story'), cite: t('case.quote.cite', '— Armin Shah') };
     var LABEL = t('case.hero.label', 'Case');
     var NEXT_EYEBROW = t('case.next.eyebrow', 'Next case');
 
-    function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+    function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function isVideo(src) { return /\.mp4$/i.test(src); }
     function mediaTag(src, cls) {
       return isVideo(src)
@@ -108,8 +95,7 @@
         : '<img class="' + cls + '" src="' + src + '" alt="" loading="lazy" />';
     }
 
-    /* Media gegroepeerd per oriëntatie -> nette grids, aspect-ratio behouden.
-       Portret (9:16) = rij gecentreerde frames; landscape (16:9) = rij die de breedte vult. */
+    /* Media gegroepeerd per oriëntatie -> nette grids, aspect-ratio behouden. */
     function buildBlocks(media) {
       var blocks = [], i = 0;
       while (i < media.length) {
@@ -122,28 +108,34 @@
       return blocks;
     }
 
-    function sectionHTML(s) {
-      return '<section class="cd-section" data-reveal>' +
-        '<p class="cd-section__index">' + esc(s.index) + '</p>' +
-        '<div class="cd-section__main"><h2 class="cd-section__title">' + esc(s.title) + '</h2>' +
-        '<div class="cd-section__text">' + s.body.map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('') + '</div></div></section>';
-    }
-
     var coverFig = '<figure class="cd-cover ' + (c.cover.portrait ? 'cd-cover--portrait' : 'cd-cover--landscape') + '" data-reveal>' +
       mediaTag(c.cover.src, 'cd-cover__media') +
-      '<figcaption class="cd-caption">' + esc(c.title) + ', image from the case</figcaption></figure>';
+      '<figcaption class="cd-caption">' + esc(c.title) + '</figcaption></figure>';
 
     var blocks = buildBlocks(c.media || []);
-    var t = Math.ceil(blocks.length / 3);
-    var g1 = blocks.slice(0, t).join(''), g2 = blocks.slice(t, t * 2).join(''), g3 = blocks.slice(t * 2).join('');
+    var third = Math.ceil(blocks.length / 2);
+    var g1 = blocks.slice(0, third).join(''), g2 = blocks.slice(third).join('');
 
-    var metaHTML =
-      metaGroup('Client', c.client) + metaGroup('Date', c.date) +
-      metaGroup('Role', c.role) + metaGroup('Services', c.services);
+    /* Per-case metadata (alleen tonen wat ingevuld is). */
     function metaGroup(label, val) {
+      if (!val) return '';
       return '<div class="cd-meta__group"><dt class="cd-meta__label">' + esc(label) +
         '</dt><dd class="cd-meta__value">' + esc(val) + '</dd></div>';
     }
+    var servicesArr = (c.services_list && c.services_list.length) ? c.services_list : (c.services ? [c.services] : []);
+    var metaHTML =
+      metaGroup('Client', c.client) +
+      metaGroup('Publisher', c.publisher) +
+      metaGroup('Agency partner', c.agency_partner) +
+      metaGroup('Project type', c.project_type) +
+      metaGroup('Role', c.role) +
+      metaGroup('Services', servicesArr.join(', '));
+
+    var intro = c.intro || c.summary || '';
+    var bodyParas = (c.body || '').split(/\n+/).filter(Boolean).map(function (p) { return '<p>' + esc(p) + '</p>'; }).join('');
+    var bodyHTML = bodyParas
+      ? '<section class="cd-section" data-reveal><div class="cd-section__main"><div class="cd-section__text">' + bodyParas + '</div></div></section>'
+      : '';
 
     root.innerHTML =
       '<a class="cd-back" href="index.html#werk">' +
@@ -153,17 +145,11 @@
         '<p class="cd-label" data-reveal>' + esc(LABEL) + '</p>' +
         (c.logo ? '<img class="cd-logo" src="' + c.logo + '" alt="' + esc(c.title) + ' logo" data-reveal />' : '') +
         '<h1 class="cd-hero__title" data-reveal>' + esc(c.title) + '</h1>' +
-        '<p class="cd-hero__summary" data-reveal>' + esc(c.summary) + '</p>' +
+        (intro ? '<p class="cd-hero__summary" data-reveal>' + esc(intro) + '</p>' : '') +
         '<dl class="cd-meta" data-reveal>' + metaHTML + '</dl>' +
       '</header>' +
       coverFig +
-      '<article class="cd-body">' +
-        sectionHTML(SECTIONS[0]) + g1 +
-        sectionHTML(SECTIONS[1]) +
-        '<blockquote class="cd-quote" data-reveal><p>' + esc(QUOTE.text) + '</p><cite>' + esc(QUOTE.cite) + '</cite></blockquote>' +
-        g2 +
-        sectionHTML(SECTIONS[2]) + g3 +
-      '</article>';
+      '<article class="cd-body">' + g1 + bodyHTML + g2 + '</article>';
 
     nextRoot.innerHTML =
       '<a class="cd-next__link cd-bleed" href="case.html?case=' + encodeURIComponent(next.slug) + '">' +
