@@ -6,6 +6,7 @@ const TEXTS = cfg.tables.texts;
 const CASES = cfg.tables.cases;
 const MEDIA = cfg.tables.media;
 const CASE_MEDIA = cfg.tables.caseMedia;
+const MARQUEE = cfg.tables.marquee;
 const BUCKET = cfg.bucket;
 const M = window.CMS_MANIFEST;
 const MEDIA_M = window.CMS_MEDIA;
@@ -176,6 +177,7 @@ function buildNav() {
   g2.innerHTML = '<div class="nav__title">Content</div>';
   g2.appendChild(navItem('cases', 'Cases', ICONS.grid));
   g2.appendChild(navItem('popup', 'Cases-popup', ICONS.grid));
+  g2.appendChild(navItem('marquee', 'Logo-marquee', ICONS.grid));
   navEl.append(g1, g2);
 }
 function navItem(id, label, ico) {
@@ -224,6 +226,8 @@ function renderHeader() {
     right.appendChild(add);
   } else if (activeTab === 'popup') {
     title.textContent = 'Cases-popup';
+  } else if (activeTab === 'marquee') {
+    title.textContent = 'Logo-marquee (homepage)';
   } else {
     const page = pageById(activeTab);
     title.textContent = page.label;
@@ -241,6 +245,7 @@ function renderHeader() {
 function renderBody() {
   if (activeTab === 'cases') return renderCases();
   if (activeTab === 'popup') return renderPopup();
+  if (activeTab === 'marquee') return renderMarquee();
   return renderTextPage(pageById(activeTab));
 }
 
@@ -666,7 +671,14 @@ function caseCard(c, index) {
   });
   const logoGalleryBtn = document.createElement('button');
   logoGalleryBtn.className = 'btn btn--sm'; logoGalleryBtn.type = 'button'; logoGalleryBtn.textContent = 'Kies uit galerij';
-  logoGalleryBtn.addEventListener('click', () => openLogoPicker(c, { logoImg, logoThumb, logoBtn, logoReset }));
+  logoGalleryBtn.addEventListener('click', () => openLogoPicker(async (path) => {
+    const { error } = await sb.from(CASES).update({ logo: path }).eq('id', c.id);
+    if (error) { toast('Mislukt: ' + error.message, true); return; }
+    c.logo = path;
+    logoImg.src = displaySrc(path); logoThumb.classList.remove('is-empty');
+    logoBtn.textContent = 'Vervang logo'; logoReset.hidden = false;
+    toast('Logo gekozen ✓');
+  }));
   logoRow.append(logoThumb, logoBtn, logoGalleryBtn, logoReset, logoInput);
   logoWrap.appendChild(logoRow);
   body.appendChild(logoWrap);
@@ -779,8 +791,9 @@ function diskLogoFor(slug) {
   return base && base.logo ? base.logo : null;
 }
 
-// Logo-galerij: kies een merk-logo uit assets/logos/.
-function openLogoPicker(c, els) {
+// Logo-galerij: kies een merk-logo uit assets/logos/ (+ geüploade logo's).
+// onPick(path) wordt aangeroepen met het gekozen pad.
+async function openLogoPicker(onPick) {
   const ov = document.createElement('div');
   ov.className = 'picker';
   const box = document.createElement('div');
@@ -793,20 +806,20 @@ function openLogoPicker(c, els) {
   head.appendChild(close);
   const grid = document.createElement('div');
   grid.className = 'picker__grid';
-  LOGO_GALLERY.forEach((path) => {
+
+  // Schijf-logo's + eerder geüploade logo's (uit de marquee-tabel).
+  let paths = LOGO_GALLERY.slice();
+  try {
+    const { data } = await sb.from(MARQUEE).select('url');
+    (data || []).forEach((r) => { if (r.url && !paths.includes(r.url)) paths.push(r.url); });
+  } catch (_) {}
+
+  paths.forEach((path) => {
     const t = document.createElement('button');
     t.className = 'picker__item'; t.type = 'button';
     const img = document.createElement('img'); img.src = displaySrc(path); img.loading = 'lazy';
     t.appendChild(img);
-    t.addEventListener('click', async () => {
-      const { error } = await sb.from(CASES).update({ logo: path }).eq('id', c.id);
-      if (error) { toast('Mislukt: ' + error.message, true); return; }
-      c.logo = path;
-      els.logoImg.src = displaySrc(path); els.logoThumb.classList.remove('is-empty');
-      els.logoBtn.textContent = 'Vervang logo'; if (els.logoReset) els.logoReset.hidden = false;
-      toast('Logo gekozen ✓');
-      document.body.removeChild(ov);
-    });
+    t.addEventListener('click', () => { document.body.removeChild(ov); onPick(path); });
     grid.appendChild(t);
   });
   box.append(head, grid);
@@ -1006,6 +1019,140 @@ function makeTagEditor(initial) {
   el.appendChild(input);
   draw();
   return { el, getValues: () => values.slice() };
+}
+
+// ---------------------------------------------------------------------
+//  Logo-marquee (homepage)
+// ---------------------------------------------------------------------
+const DEFAULT_MARQUEE = [
+  { name: 'Convo', url: 'assets/cases/convo/logo.png' },
+  { name: "Kick 't Met", url: 'assets/cases/kick-t-met/logo.png' },
+  { name: "Kick 't Net", url: 'assets/cases/kick-t-net/logo.png' },
+  { name: 'Convo × Rabobank', url: 'assets/cases/rabobank/logo.png' },
+  { name: 'Ziggo', url: 'assets/logos/ziggo.png' },
+  { name: 'Red Bull', url: 'assets/logos/red-bull.png' },
+  { name: 'Complex', url: 'assets/logos/complex.png' },
+  { name: 'Adidas', url: 'assets/logos/adidas.png' },
+  { name: 'Puma', url: 'assets/logos/puma.png' },
+  { name: 'Reebok', url: 'assets/logos/reebok.png' },
+  { name: 'KFC', url: 'assets/logos/kfc.png' },
+  { name: 'Zalando', url: 'assets/logos/zalando.png' },
+  { name: 'FIFA', url: 'assets/logos/fifa.png' },
+  { name: 'AFCON', url: 'assets/logos/afcon.png' },
+  { name: 'G-Shock', url: 'assets/logos/gshock.png' },
+  { name: 'Hot Ones', url: 'assets/logos/hot-ones.png' },
+  { name: 'Spire', url: 'assets/logos/spire.png' },
+  { name: 'Telfaz', url: 'assets/logos/telfaz.png' },
+];
+
+async function renderMarquee() {
+  panel.innerHTML = '<div class="loading">Logo’s laden…</div>';
+  const { data, error } = await sb.from(MARQUEE).select('*').eq('page', 'home').order('sort_order', { ascending: true });
+  if (error) { panel.innerHTML = `<div class="note">Kon logo’s niet laden: ${error.message}</div>`; return; }
+  const rows = data || [];
+  panel.innerHTML = '';
+  const note = document.createElement('div');
+  note.className = 'note';
+  note.textContent = 'Deze logo’s lopen in de balk op de homepage. Upload nieuwe of kies uit de galerij, en herorden met ↑↓.';
+  panel.appendChild(note);
+
+  const grid = document.createElement('div');
+  grid.className = 'media-grid media-grid--inline';
+  if (rows.length) {
+    rows.forEach((m, i) => {
+      const card = document.createElement('div'); card.className = 'cmedia';
+      const thumb = document.createElement('div'); thumb.className = 'logo-tile';
+      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; thumb.appendChild(img);
+      const bar = document.createElement('div'); bar.className = 'cmedia__bar';
+      const up = document.createElement('button'); up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
+      const down = document.createElement('button'); down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
+      const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
+      up.addEventListener('click', () => moveMarquee(rows, i, -1));
+      down.addEventListener('click', () => moveMarquee(rows, i, 1));
+      del.addEventListener('click', async () => {
+        const { error: e } = await sb.from(MARQUEE).delete().eq('id', m.id);
+        if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
+        renderMarquee();
+      });
+      bar.append(up, down, del); card.append(thumb, bar); grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+  } else {
+    const n2 = document.createElement('div'); n2.className = 'note';
+    n2.textContent = 'Nog niet in het CMS — de homepage toont nu de standaardlijst. Klik "Standaardlijst overnemen" om te beginnen met bewerken, of voeg direct logo’s toe.';
+    panel.appendChild(n2);
+    DEFAULT_MARQUEE.forEach((m) => {
+      const card = document.createElement('div'); card.className = 'cmedia';
+      const thumb = document.createElement('div'); thumb.className = 'logo-tile';
+      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; thumb.appendChild(img);
+      card.appendChild(thumb); grid.appendChild(card);
+    });
+    panel.appendChild(grid);
+  }
+
+  const actions = document.createElement('div');
+  actions.className = 'cmedia__actions';
+  const fileInput = document.createElement('input');
+  fileInput.type = 'file'; fileInput.accept = 'image/*'; fileInput.hidden = true;
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn--primary btn--sm'; addBtn.type = 'button'; addBtn.textContent = '+ Logo uploaden';
+  addBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => { const f = fileInput.files[0]; if (f) uploadMarqueeLogo(f, rows, addBtn); fileInput.value = ''; });
+  const pickBtn = document.createElement('button');
+  pickBtn.className = 'btn btn--sm'; pickBtn.type = 'button'; pickBtn.textContent = 'Kies uit galerij';
+  pickBtn.addEventListener('click', () => openLogoPicker(async (path) => { await addMarqueeRow(path, pathName(path), rows); renderMarquee(); }));
+  actions.append(addBtn, pickBtn, fileInput);
+  if (!rows.length) {
+    const imp = document.createElement('button');
+    imp.className = 'btn btn--sm'; imp.type = 'button'; imp.textContent = 'Standaardlijst overnemen';
+    imp.addEventListener('click', async () => {
+      imp.disabled = true; imp.textContent = 'Bezig…';
+      try {
+        const insert = DEFAULT_MARQUEE.map((m, i) => ({ page: 'home', url: m.url, name: m.name, sort_order: i }));
+        const { error: e } = await sb.from(MARQUEE).insert(insert);
+        if (e) throw e;
+        renderMarquee();
+      } catch (e) { imp.disabled = false; imp.textContent = 'Standaardlijst overnemen'; toast('Overnemen mislukt: ' + e.message, true); }
+    });
+    actions.appendChild(imp);
+  }
+  panel.appendChild(actions);
+}
+
+function pathName(p) { return (p.split('/').pop() || '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' '); }
+
+async function addMarqueeRow(url, name, rows) {
+  const maxOrder = (rows || []).reduce((m, r) => Math.max(m, r.sort_order || 0), -1);
+  const { error } = await sb.from(MARQUEE).insert({ page: 'home', url, name, sort_order: maxOrder + 1 });
+  if (error) throw error;
+}
+
+async function uploadMarqueeLogo(file, rows, btn) {
+  btn.disabled = true; btn.textContent = 'Uploaden…';
+  try {
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const path = 'marquee-' + Date.now() + '.' + ext;
+    const up = await sb.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600', contentType: file.type || undefined });
+    if (up.error) throw up.error;
+    const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    await addMarqueeRow(url, (file.name || 'logo').replace(/\.[a-z0-9]+$/i, ''), rows);
+    toast('Logo toegevoegd ✓');
+    renderMarquee();
+  } catch (e) {
+    toast('Uploaden mislukt: ' + e.message, true);
+    btn.disabled = false; btn.textContent = '+ Logo uploaden';
+  }
+}
+
+async function moveMarquee(rows, index, dir) {
+  const j = index + dir;
+  if (j < 0 || j >= rows.length) return;
+  const a = rows[index], b = rows[j];
+  await Promise.all([
+    sb.from(MARQUEE).update({ sort_order: b.sort_order }).eq('id', a.id),
+    sb.from(MARQUEE).update({ sort_order: a.sort_order }).eq('id', b.id),
+  ]);
+  renderMarquee();
 }
 
 // ---------------------------------------------------------------------

@@ -428,7 +428,9 @@ function fitText() {
 function buildMarquee() {
   const track = document.querySelector('[data-marquee]');
   if (!track) return;
-  const items = LOGOS.map(l => `<span class="marquee__item"><img class="marquee__logo" src="${l.src}" alt="${l.name}" loading="lazy" /></span>`).join('');
+  // CMS-override (window.CMS_MARQUEE) heeft voorrang, anders de lijst hierboven.
+  const logos = (window.CMS_MARQUEE && window.CMS_MARQUEE.length) ? window.CMS_MARQUEE : LOGOS;
+  const items = logos.map(l => `<span class="marquee__item"><img class="marquee__logo" src="${l.src}" alt="${l.name || ''}" loading="lazy" /></span>`).join('');
   track.innerHTML = items + items;                 // 2x voor een naadloze loop
 }
 

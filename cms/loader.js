@@ -28,13 +28,17 @@ async function fetchData() {
   // Supabase-client pas hier laden, zodat een geblokkeerde CDN de site niet breekt.
   const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
   const sb = createClient(cfg.url, cfg.anonKey, { auth: { persistSession: false } });
-  const [texts, cases, media, caseMedia] = await Promise.all([
+  const [texts, cases, media, caseMedia, marquee] = await Promise.all([
     sb.from(cfg.tables.texts).select('key,value'),
     sb.from(cfg.tables.cases).select('*').eq('published', true).order('sort_order', { ascending: true }),
     sb.from(cfg.tables.media).select('key,url'),
     sb.from(cfg.tables.caseMedia).select('slug,url,kind,portrait,sort_order').order('sort_order', { ascending: true }),
+    sb.from(cfg.tables.marquee).select('url,name,sort_order').eq('page', 'home').order('sort_order', { ascending: true }),
   ]);
-  return { texts: texts.data || [], cases: cases.data || [], media: media.data || [], caseMedia: caseMedia.data || [] };
+  return {
+    texts: texts.data || [], cases: cases.data || [], media: media.data || [],
+    caseMedia: caseMedia.data || [], marquee: marquee.data || [],
+  };
 }
 
 // --- Media-overrides toepassen (foto's die in de pagina zitten) --------
@@ -159,6 +163,9 @@ async function startPage() {
       applyTexts(res.texts);
       applyMedia(res.media);
       mergeCases(res.cases, res.caseMedia);
+      if (res.marquee && res.marquee.length) {
+        window.CMS_MARQUEE = res.marquee.map((m) => ({ src: m.url, name: m.name || '' }));
+      }
     } else {
       window.CMS_TEXT = window.CMS_TEXT || {};
     }

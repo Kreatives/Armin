@@ -250,6 +250,8 @@ body {
 .cmedia__thumb.is-portrait { aspect-ratio: 3 / 4; }
 .cmedia__thumb img, .cmedia__thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cmedia__bar { display: flex; gap: 4px; padding: 6px; justify-content: center; background: var(--surface); }
+.logo-tile { aspect-ratio: 16 / 10; background: #1c1f24; display: grid; place-items: center; padding: 14px; }
+.logo-tile img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .cmedia__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
 /* Popup-curatie rij */
