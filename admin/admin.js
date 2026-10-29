@@ -558,6 +558,8 @@ async function resetMedia(item, baseline, els) {
 //  Cases
 // ---------------------------------------------------------------------
 const SERVICE_CATS = ['Creative Strategy', 'Format & IP', 'Football & Culture', 'Creative Direction', 'Partnerships'];
+// Beschikbare merk-logo's (assets/logos/) voor de logo-galerij.
+const LOGO_GALLERY = ['adidas', 'afcon', 'complex', 'convo', 'fifa', 'gshock', 'hot-ones', 'kfc', 'kick-t-met', 'legacy-show', 'puma', 'red-bull', 'reebok', 'spire', 'telfaz', 'zalando', 'ziggo'].map((n) => 'assets/logos/' + n + '.png');
 const CASE_TEXT_FIELDS = [
   { k: 'title', label: 'Naam' },
   { k: 'sub', label: 'Subtitel (homepage-kaart)' },
@@ -662,7 +664,10 @@ function caseCard(c, index) {
     if (file) uploadCaseLogo(c, file, { logoImg, logoThumb, logoBtn, logoReset });
     logoInput.value = '';
   });
-  logoRow.append(logoThumb, logoBtn, logoReset, logoInput);
+  const logoGalleryBtn = document.createElement('button');
+  logoGalleryBtn.className = 'btn btn--sm'; logoGalleryBtn.type = 'button'; logoGalleryBtn.textContent = 'Kies uit galerij';
+  logoGalleryBtn.addEventListener('click', () => openLogoPicker(c, { logoImg, logoThumb, logoBtn, logoReset }));
+  logoRow.append(logoThumb, logoBtn, logoGalleryBtn, logoReset, logoInput);
   logoWrap.appendChild(logoRow);
   body.appendChild(logoWrap);
 
@@ -772,6 +777,43 @@ async function uploadCaseLogo(c, file, els) {
 function diskLogoFor(slug) {
   const base = (window.CASES || []).find((c) => c.slug === slug);
   return base && base.logo ? base.logo : null;
+}
+
+// Logo-galerij: kies een merk-logo uit assets/logos/.
+function openLogoPicker(c, els) {
+  const ov = document.createElement('div');
+  ov.className = 'picker';
+  const box = document.createElement('div');
+  box.className = 'picker__box';
+  const head = document.createElement('div');
+  head.className = 'picker__head';
+  head.innerHTML = '<strong>Kies een logo</strong>';
+  const close = document.createElement('button');
+  close.className = 'btn btn--ghost btn--sm'; close.textContent = 'Sluiten';
+  head.appendChild(close);
+  const grid = document.createElement('div');
+  grid.className = 'picker__grid';
+  LOGO_GALLERY.forEach((path) => {
+    const t = document.createElement('button');
+    t.className = 'picker__item'; t.type = 'button';
+    const img = document.createElement('img'); img.src = displaySrc(path); img.loading = 'lazy';
+    t.appendChild(img);
+    t.addEventListener('click', async () => {
+      const { error } = await sb.from(CASES).update({ logo: path }).eq('id', c.id);
+      if (error) { toast('Mislukt: ' + error.message, true); return; }
+      c.logo = path;
+      els.logoImg.src = displaySrc(path); els.logoThumb.classList.remove('is-empty');
+      els.logoBtn.textContent = 'Vervang logo'; if (els.logoReset) els.logoReset.hidden = false;
+      toast('Logo gekozen ✓');
+      document.body.removeChild(ov);
+    });
+    grid.appendChild(t);
+  });
+  box.append(head, grid);
+  ov.appendChild(box);
+  document.body.appendChild(ov);
+  close.addEventListener('click', () => document.body.removeChild(ov));
+  ov.addEventListener('click', (e) => { if (e.target === ov) document.body.removeChild(ov); });
 }
 
 // --- Per-case media ----------------------------------------------------
