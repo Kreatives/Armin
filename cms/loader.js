@@ -60,10 +60,15 @@ function applyTexts(rows) {
 
   (window.CMS_MANIFEST.allFields || []).forEach((fld) => {
     if (fld.mode === 'virtual' || !fld.selector) return;       // door JS gegenereerd
-    if (!(fld.key in map)) return;                              // geen override -> originele tekst blijft
+    const hasText = fld.key in map;
+    const hrefKey = fld.key + '@href';
+    const hasHref = fld.href && (hrefKey in map);
+    if (!hasText && !hasHref) return;                          // geen override -> origineel blijft
     try {
       const el = document.querySelector(fld.selector);
-      if (el) window.CMS.applyField(el, map[fld.key], fld.mode);
+      if (!el) return;
+      if (hasText) window.CMS.applyField(el, map[fld.key], fld.mode);
+      if (hasHref) el.setAttribute('href', map[hrefKey]);
     } catch (_) { /* ongeldige selector: negeren, origineel blijft staan */ }
   });
 }

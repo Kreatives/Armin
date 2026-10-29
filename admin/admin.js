@@ -138,6 +138,14 @@ async function baselineFor(field, file) {
   if (!el) return { text: '', found: false };
   return { text: window.CMS.readField(el, field.mode), found: true };
 }
+async function hrefBaselineFor(field, file) {
+  if (!field.href || !field.selector) return '';
+  const doc = await getDoc(file);
+  let el = null;
+  try { el = doc.querySelector(field.selector); } catch (_) {}
+  return el ? (el.getAttribute('href') || '') : '';
+}
+
 async function mediaBaseline(item, file) {
   const doc = await getDoc(file);
   let el = null;
@@ -333,6 +341,27 @@ function makeEditor(field, baseline, found) {
   return { wrap, area };
 }
 
+// Extra invoer voor de URL (href) van een link-veld, gekoppeld aan de opslaan-balk.
+function makeHrefEditor(field, hrefBaseline) {
+  const hkey = field.key + '@href';
+  const wrap = document.createElement('div');
+  wrap.className = 'href-edit';
+  const lab = document.createElement('div');
+  lab.className = 'mini__label'; lab.textContent = 'Link (URL)';
+  const input = document.createElement('input');
+  input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…';
+  const saved = (overrides[hkey] != null && overrides[hkey] !== '') ? overrides[hkey] : hrefBaseline;
+  input.value = saved || '';
+  const savedVal = () => { const ov = overrides[hkey]; return (ov != null && ov !== '') ? ov : (hrefBaseline || ''); };
+  input.addEventListener('input', () => {
+    if (input.value !== savedVal()) pending.set(hkey, { value: input.value, baseline: hrefBaseline || '' });
+    else pending.delete(hkey);
+    updateSaveBar();
+  });
+  wrap.append(lab, input);
+  return wrap;
+}
+
 // Losse rij: label + "Nu" links, invoer rechts (voor lange, op zichzelf staande teksten).
 async function makeRow(field, file) {
   const { text: baseline, found } = await baselineFor(field, file);
@@ -351,6 +380,7 @@ async function makeRow(field, file) {
   const main = document.createElement('div');
   main.className = 'row__main';
   main.appendChild(wrap);
+  if (field.href) main.appendChild(makeHrefEditor(field, await hrefBaselineFor(field, file)));
   row.append(side, main);
   return row;
 }
@@ -372,6 +402,7 @@ async function makeGroupCard(fields, file) {
     lab.className = 'mini__label'; lab.textContent = field.label;
     const { wrap } = makeEditor(field, baseline, found);
     mini.append(lab, wrap);
+    if (field.href) mini.appendChild(makeHrefEditor(field, await hrefBaselineFor(field, file)));
     grid.appendChild(mini);
   }
   return card;

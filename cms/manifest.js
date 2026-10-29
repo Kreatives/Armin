@@ -95,7 +95,7 @@
       f(`about.feat.s${i}.outlet`, 'Bron',        `${slide} .ab-feat__outlet`),
       f(`about.feat.s${i}.title`,  'Titel',       `${slide} .ab-feat__title`, { wide: true }),
       f(`about.feat.s${i}.desc`,   'Omschrijving',`${slide} .ab-feat__desc`, { wide: true }),
-      f(`about.feat.s${i}.cta`,    'Knoptekst',   `${slide} .ab-feat__cta`),
+      f(`about.feat.s${i}.cta`,    'Knoptekst',   `${slide} .ab-feat__cta`, { href: true }),
     ]));
   }
   // ---- About: at a glance (10) ----
@@ -138,7 +138,7 @@
             f('home.aboutShort.highlight', 'Highlight-tekst',   '.about-v1__hl'),
             f('home.aboutShort.text',      'Paragraaf',         '.about-v1__text'),
             f('home.aboutShort.caption',   'Bijschrift foto’s', '.about-v1__caption'),
-            f('home.aboutShort.cta',       'Knop',              '.about-v1__btm .btn-primary'),
+            f('home.aboutShort.cta',       'Knop',              '.about-v1__btm .btn-primary', { href: true }),
           ]},
           { label: 'Cases', fields: [
             f('home.work.title', 'Titel', '.work__title'),
@@ -228,7 +228,7 @@
           ]},
           { label: '12 — Contact', fields: [
             f('about.contact.statement', 'Statement', '.ab-contact .ab-statement'),
-            f('about.contact.cta',       'Knop',      '.ab-contact__cta'),
+            f('about.contact.cta',       'Knop',      '.ab-contact__cta', { href: true }),
           ]},
         ],
       },
@@ -250,25 +250,25 @@
           { label: 'Contact', fields: [
             f('footer.contactLabel', 'Kop',             '.contact__col:nth-of-type(1) .contact__label'),
             ...grp('footer-contact', 'Gegevens', [
-              f('footer.email', 'E-mail (tekst)',  '.contact__col:nth-of-type(1) a:nth-of-type(1)'),
-              f('footer.phone', 'Telefoon (tekst)','.contact__col:nth-of-type(1) a:nth-of-type(2)'),
+              f('footer.email', 'E-mail (tekst)',  '.contact__col:nth-of-type(1) a:nth-of-type(1)', { href: true }),
+              f('footer.phone', 'Telefoon (tekst)','.contact__col:nth-of-type(1) a:nth-of-type(2)', { href: true }),
             ]),
           ]},
           { label: 'Pagina’s', fields: [
             f('footer.pagesLabel', 'Kop', '.contact__col:nth-of-type(2) .contact__label'),
             ...grp('footer-nav', 'Links', [
-              f('footer.nav1', 'Link 1', '.contact__col:nth-of-type(2) a:nth-of-type(1)'),
-              f('footer.nav2', 'Link 2', '.contact__col:nth-of-type(2) a:nth-of-type(2)'),
-              f('footer.nav3', 'Link 3', '.contact__col:nth-of-type(2) a:nth-of-type(3)'),
-              f('footer.nav4', 'Link 4', '.contact__col:nth-of-type(2) a:nth-of-type(4)'),
+              f('footer.nav1', 'Link 1', '.contact__col:nth-of-type(2) a:nth-of-type(1)', { href: true }),
+              f('footer.nav2', 'Link 2', '.contact__col:nth-of-type(2) a:nth-of-type(2)', { href: true }),
+              f('footer.nav3', 'Link 3', '.contact__col:nth-of-type(2) a:nth-of-type(3)', { href: true }),
+              f('footer.nav4', 'Link 4', '.contact__col:nth-of-type(2) a:nth-of-type(4)', { href: true }),
             ]),
           ]},
           { label: 'Socials', fields: [
             f('footer.socialsLabel', 'Kop', '.contact__col:nth-of-type(3) .contact__label'),
             ...grp('footer-social', 'Links', [
-              f('footer.social1', 'Social 1', '.contact__col:nth-of-type(3) a:nth-of-type(1)'),
-              f('footer.social2', 'Social 2', '.contact__col:nth-of-type(3) a:nth-of-type(2)'),
-              f('footer.social3', 'Social 3', '.contact__col:nth-of-type(3) a:nth-of-type(3)'),
+              f('footer.social1', 'Social 1', '.contact__col:nth-of-type(3) a:nth-of-type(1)', { href: true }),
+              f('footer.social2', 'Social 2', '.contact__col:nth-of-type(3) a:nth-of-type(2)', { href: true }),
+              f('footer.social3', 'Social 3', '.contact__col:nth-of-type(3) a:nth-of-type(3)', { href: true }),
             ]),
           ]},
           { label: 'Gevestigd in', fields: [
