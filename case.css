@@ -160,8 +160,8 @@
 .cd-section__text > p {
   margin: 0 0 1.2rem;
   max-width: 66ch;
-  font-size: var(--fs-body);
-  line-height: 1.7;
+  font-size: var(--body-size);
+  line-height: 1.6;
   color: rgba(247, 245, 240, 0.75);
 }
 .cd-section__text > p:last-child { margin-bottom: 0; }

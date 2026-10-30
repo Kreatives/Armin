@@ -452,12 +452,11 @@ body {
 /* --- Logo marquee --- */
 .marquee { overflow: hidden; padding: clamp(2.5rem, 6vh, 4rem) 0; background: transparent; color: var(--paper); }
 .marquee__viewport { overflow: hidden; }
-.marquee__track { display: flex; align-items: center; gap: clamp(1.25rem, 2.6vw, 2.25rem); width: max-content; animation: marquee-scroll 34s linear infinite; will-change: transform; }
+.marquee__track { display: flex; align-items: center; gap: 0; width: max-content; animation: marquee-scroll 60s linear infinite; will-change: transform; }
 .marquee:hover .marquee__track { animation-play-state: paused; }
-/* Echte logo's (donker/detail) op een lichte chip -> altijd leesbaar op de donkere strip. */
 /* Logo's exact zoals aangeleverd: direct op de donkere strip, geen chip/filter. */
-.marquee__item { flex: none; display: flex; align-items: center; justify-content: center; padding: 0 clamp(1.6rem, 3.2vw, 3.2rem); }
-.marquee__logo { height: clamp(2.4rem, 4vw, 3.6rem); width: auto; display: block; object-fit: contain; }
+.marquee__item { flex: none; display: flex; align-items: center; justify-content: center; padding: 0 clamp(1.4rem, 2.6vw, 2.4rem); }
+.marquee__logo { height: clamp(3rem, 4.6vw, 4.2rem); width: auto; display: block; object-fit: contain; }
 @keyframes marquee-scroll { to { transform: translateX(-50%); } }
 
 /* --- Intro (voetbal + cultuur) — scroll-highlight --- */
@@ -717,13 +716,23 @@ a.contact__link:hover { color: var(--orange); }
 /* =========================================================
    Mobiel (telefoon) — extra compressie homepage
    ========================================================= */
+/* Hero-pijlen (dienst vorige/volgende) zijn op touch nutteloos -> weg */
+@media (max-width: 767px) {
+  .hero-arrows { display: none; }
+}
 @media (max-width: 600px) {
   .newsletter { padding: clamp(3rem, 8vh, 5rem) var(--edge); }
   .work__head { align-items: flex-start; }
-  /* diensten-overlay: odometer lager zodat hij niet het hele scherm vult */
+  /* cases-ring compacter zodat er geen grote lege ruimte boven de kaart staat */
+  .ring-stage, .work__ring { height: clamp(300px, 46vh, 400px); }
+  .work__arrows { margin-top: clamp(1rem, 3vh, 1.75rem); }
+  /* cases-overlay: filter-knoppen in een grid i.p.v. horizontale scroll */
   .diensten { --reel-item: 15vh; }
-  .dienst-item { font-size: clamp(2rem, 11vw, 5rem); }
-  .diensten__menu button { white-space: nowrap; }
+  .diensten__menu { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 2 * var(--edge)); overflow: visible; }
+  .diensten__menu button { flex: 0 0 auto; padding: 0.6rem 0.85rem; font-size: 0.82rem; white-space: nowrap; }
+  /* case-titels (odometer) binnen het scherm, gecentreerd */
+  .dienst-item { font-size: clamp(1.4rem, 8vw, 3rem); padding: 0 var(--edge); text-align: center; }
+  .diensten__hint { font-size: 0.72rem; }
 }
 @media (max-width: 440px) {
   .contact__cols { grid-template-columns: 1fr; }

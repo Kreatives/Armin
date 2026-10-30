@@ -860,7 +860,23 @@ function init() {
     }, { threshold: 0 }).observe(heroEl);
   }
 
-  const paths = buildPaths(isMobile() ? 2 : 1);
+  // MOBIEL: lichte, statische hero (geen pin, geen scroll-scrub, geen WebGL-curl)
+  // -> soepel scrollen + geen grote lege ruimte na de hero. Eén frame volstaat.
+  if (isMobile()) {
+    const lastPath = SEQUENCE.path + String(SEQUENCE.count).padStart(SEQUENCE.pad, '0') + SEQUENCE.ext;
+    const readyM = preload([lastPath], p => { loaderFill.style.width = (p * 100) + '%'; })
+      .then(imgs => {
+        frames = imgs;
+        resizeCanvas();
+        drawFrame(0, true);
+        loaderEl.classList.add('is-done');
+        return fontsReady.then(() => { showHero(); showEndState(); setupReveals(); setupWork(); setupHighlight(); ScrollTrigger.refresh(); });
+      });
+    runPreloader(readyM);
+    return;
+  }
+
+  const paths = buildPaths(1);
   const ready = preload(paths, p => { loaderFill.style.width = (p * 100) + '%'; })
     .then(imgs => {
       frames = imgs;

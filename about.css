@@ -25,7 +25,7 @@
 }
 
 /* Leescopy: links uitgelijnd, nette regellengte (niet gecentreerd) */
-.ab-copy { margin: 0; max-width: 68ch; font-size: var(--body-size); line-height: 1.62; letter-spacing: -0.02em; color: rgba(247, 245, 240, 0.62); }
+.ab-copy { margin: 0; max-width: 68ch; font-size: var(--body-size); line-height: 1.6; letter-spacing: -0.02em; color: rgba(247, 245, 240, 0.62); }
 .ab-copy + .ab-copy { margin-top: 1.25rem; }
 
 /* ---- Header -------------------------------------------- */
@@ -160,7 +160,7 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
 /* ---- 06 Selected partners — marquee ------------------- */
 .ab-partners__intro { margin-bottom: clamp(2rem, 5vh, 3.5rem); }
 .ab-partners .marquee { padding: 0; }
-.ab-partners .marquee__logo { height: clamp(1.8rem, 3vw, 2.6rem); }
+.ab-partners .marquee__logo { height: clamp(2.6rem, 4vw, 3.6rem); }
 
 /* ---- 07 Experience / 08 Recognition rows -------------- */
 .ab-rows { border-top: 1px solid rgba(247, 245, 240, 0.14); }
@@ -195,7 +195,7 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
 .ab-feat__content { position: relative; z-index: 1; padding: clamp(1.75rem, 4vw, 3.25rem); max-width: 760px; }
 .ab-feat__outlet { margin: 0 0 0.6rem; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.6rem, 3.2vw, 2.8rem); line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; color: var(--paper); }
 .ab-feat__title { margin: 0 0 0.6rem; font-size: clamp(1.05rem, 1.6vw, 1.35rem); letter-spacing: -0.02em; color: rgba(247, 245, 240, 0.92); }
-.ab-feat__desc { margin: 0 0 1.5rem; font-size: var(--fs-body); line-height: 1.5; letter-spacing: -0.02em; color: rgba(247, 245, 240, 0.65); }
+.ab-feat__desc { margin: 0 0 1.5rem; font-size: var(--body-size); line-height: 1.6; letter-spacing: -0.02em; color: rgba(247, 245, 240, 0.65); }
 .ab-feat__cta { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-display); font-size: 1.1rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--paper); text-decoration: none; border-bottom: 1px solid rgba(247,245,240,0.4); padding-bottom: 2px; transition: color 0.3s var(--ease-out), border-color 0.3s var(--ease-out); }
 .ab-feat__cta:hover { color: var(--orange); border-color: var(--orange); }
 .ab-feat__arrows { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: clamp(1.5rem, 4vh, 2.5rem); }
@@ -266,13 +266,19 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
 @media (max-width: 600px) {
   .ab-copy, .ab-split .ab-copy { max-width: 100%; }
   .ab-hero__portrait { max-width: 100%; margin-left: 0; }
-  .ab-partners .marquee__logo { height: clamp(1.6rem, 6vw, 2.2rem); }
+  .ab-partners .marquee__logo { height: clamp(2.2rem, 8vw, 3rem); }
   .ab-faq__q { gap: 1rem; font-size: clamp(1.15rem, 5.4vw, 1.5rem); }
   .ab-contact__cta { font-size: clamp(1.3rem, 6vw, 1.8rem); }
   .ab-story__year { font-size: 1.15rem; }
-  .ab-feat__content { padding: 1.4rem; }
   /* timeline-lijn niet nodig op smalle schermen */
   .ab-story__track::before { display: none; }
+  /* Featured & interviews: intro ONDER de kop, pijlen eronder, hogere kaart */
+  .ab-feat__head { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+  .ab-feat__arrows { justify-content: flex-start; margin-top: 0.25rem; }
+  .ab-feat__slide { width: 88vw; height: clamp(460px, 76vh, 640px); }
+  .ab-feat__content { padding: 1.4rem; }
+  .ab-feat__outlet { font-size: clamp(1.5rem, 7vw, 2.4rem); }
+  .ab-feat__desc { font-size: 0.95rem; margin-bottom: 1rem; }
 }
 @media (max-width: 420px) {
   .ab-service { grid-template-columns: 1fr; }
