@@ -244,6 +244,17 @@
     };
     const prev = document.querySelector(prevSel);
     const next = document.querySelector(nextSel);
+    // Zorg voor precies genoeg ruimte achter de laatste kaart, zodat die ook
+    // naar de leespositie gescrolld kan worden (niet te weinig, niet eindeloos).
+    const fitTrailing = () => {
+      const items = vp.querySelectorAll(itemSel);
+      if (!items.length || !track) return;
+      track.style.paddingRight = '';
+      const base = parseFloat(getComputedStyle(track).paddingRight) || 0;
+      const last = items[items.length - 1];
+      const need = vp.clientWidth - last.offsetWidth - items[0].offsetLeft;
+      track.style.paddingRight = Math.max(base, Math.ceil(need)) + 'px';
+    };
     const maxScroll = () => vp.scrollWidth - vp.clientWidth;
     // Dim de pijl aan begin/eind (en maak 'm niet-klikbaar daar).
     const setArrow = (btn, disabled) => {
@@ -260,8 +271,9 @@
     if (prev) prev.addEventListener('click', () => vp.scrollBy({ left: -step(), behavior: 'smooth' }));
     if (next) next.addEventListener('click', () => vp.scrollBy({ left: step(), behavior: 'smooth' }));
     vp.addEventListener('scroll', updateArrows, { passive: true });
-    window.addEventListener('resize', updateArrows);
-    setTimeout(updateArrows, 100);
+    window.addEventListener('resize', () => { fitTrailing(); updateArrows(); });
+    window.addEventListener('load', () => { fitTrailing(); updateArrows(); });
+    setTimeout(() => { fitTrailing(); updateArrows(); }, 150);
   }
 
   // Video lightbox: Watch-knoppen en afspeelbare kaarten openen de YouTube-embed
