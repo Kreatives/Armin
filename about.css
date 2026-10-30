@@ -259,3 +259,21 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
   .ab-feat__slide { width: 86vw; }
   .ab-story__card { width: 80vw; }
 }
+
+/* --- Mobiel (telefoon) --------------------------------- */
+@media (max-width: 600px) {
+  .ab-copy, .ab-split .ab-copy { max-width: 100%; }
+  .ab-hero__portrait { max-width: 100%; margin-left: 0; }
+  .ab-partners .marquee__logo { height: clamp(1.6rem, 6vw, 2.2rem); }
+  .ab-faq__q { gap: 1rem; font-size: clamp(1.15rem, 5.4vw, 1.5rem); }
+  .ab-contact__cta { font-size: clamp(1.3rem, 6vw, 1.8rem); }
+  .ab-story__year { font-size: 1.15rem; }
+  .ab-feat__content { padding: 1.4rem; }
+  /* timeline-lijn niet nodig op smalle schermen */
+  .ab-story__track::before { display: none; }
+}
+@media (max-width: 420px) {
+  .ab-service { grid-template-columns: 1fr; }
+  .ab-row, .ab-row--rec { grid-template-columns: 0.55fr 1fr; row-gap: 0.15rem; }
+  .ab-row__role { grid-column: 1 / -1; }
+}

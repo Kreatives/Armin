@@ -713,3 +713,20 @@ a.contact__link:hover { color: var(--orange); }
 @media (max-width: 460px) {
   .dock__link[data-sec="about"] { display: none; }
 }
+
+/* =========================================================
+   Mobiel (telefoon) — extra compressie homepage
+   ========================================================= */
+@media (max-width: 600px) {
+  .newsletter { padding: clamp(3rem, 8vh, 5rem) var(--edge); }
+  .work__head { align-items: flex-start; }
+  /* diensten-overlay: odometer lager zodat hij niet het hele scherm vult */
+  .diensten { --reel-item: 15vh; }
+  .dienst-item { font-size: clamp(2rem, 11vw, 5rem); }
+  .diensten__menu button { white-space: nowrap; }
+}
+@media (max-width: 440px) {
+  .contact__cols { grid-template-columns: 1fr; }
+  .diensten { --reel-item: 13vh; }
+  .dock__link { padding: 10px 11px; }
+}

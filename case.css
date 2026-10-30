@@ -275,3 +275,18 @@
   .cd-section { grid-template-columns: 1fr; gap: clamp(1rem, 3vh, 1.5rem); }
   .cd-meta { grid-template-columns: 1fr 1fr; row-gap: 1.75rem; }
 }
+
+/* --- Mobiel (telefoon) --------------------------------- */
+@media (max-width: 600px) {
+  .cd-meta { grid-template-columns: 1fr 1fr; gap: 1.25rem 1rem; }
+  .cd-meta__value { font-size: 1.05rem; }
+  .cd-quote p { font-size: clamp(1.5rem, 7vw, 2rem); max-width: 100%; }
+  .cd-next__link { flex-direction: column; align-items: flex-start; min-height: clamp(220px, 42vh, 300px); gap: 1rem; }
+  .cd-next__arrow { align-self: flex-end; }
+  .cd-caption, .cd-cover--portrait .cd-caption { width: 100%; }
+}
+@media (max-width: 420px) {
+  .cd-meta { grid-template-columns: 1fr; }
+  .cd-meta__label { font-size: 0.8rem; }
+  .cd-back { font-size: 0.9rem; }
+}
