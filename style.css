@@ -661,7 +661,7 @@ a.contact__link:hover { color: var(--orange); }
    Zwevende dock-navigatie (sticky onderaan, alle pagina's)
    ========================================================= */
 .dock {
-  position: fixed; left: 50%; bottom: clamp(14px, 3vh, 26px); transform: translateX(-50%);
+  position: fixed; left: 50%; bottom: clamp(14px, 3vh, 26px);
   z-index: 150; display: flex; align-items: center; gap: 8px;
   padding: 8px; border-radius: 20px;
   background: rgba(17, 17, 17, 0.82);
@@ -670,7 +670,12 @@ a.contact__link:hover { color: var(--orange); }
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
   max-width: calc(100vw - 20px);
+  /* Verborgen tot je voorbij de hero scrollt */
+  transform: translateX(-50%) translateY(160%);
+  opacity: 0; pointer-events: none;
+  transition: transform 0.5s var(--ease-out), opacity 0.4s var(--ease-out);
 }
+.dock.is-visible { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
 .dock__logo {
   flex: none; width: 48px; height: 48px; border-radius: 13px; background: #1f1f1f;
   display: grid; place-items: center; color: var(--paper); text-decoration: none;
