@@ -140,7 +140,7 @@
             f('home.aboutShort.caption',   'Bijschrift foto’s', '.about-v1__caption'),
             f('home.aboutShort.cta',       'Knop',              '.about-v1__btm .btn-primary', { href: true }),
           ]},
-          { label: 'Cases', fields: [
+          { label: 'Cases', widget: 'homepageCases', fields: [
             f('home.work.title', 'Titel', '.work__title'),
             f('home.work.cta',   'Knop',  '.work [data-open-diensten]', { href: true, hrefHint: 'Leeg laten = opent de cases-overlay. Vul een link in om ergens heen te gaan.' }),
           ]},

@@ -292,6 +292,8 @@ async function renderTextPage(page) {
       for (const it of secMedia) mg.appendChild(await mediaCard(it, page.file));
       sec.appendChild(mg);
     }
+    // Speciale widget: kies welke cases op de homepage-carousel staan.
+    if (section.widget === 'homepageCases') sec.appendChild(await homepageCasesWidget());
     frag.appendChild(sec);
   }
   panel.innerHTML = '';
@@ -1424,6 +1426,42 @@ async function renderPopup() {
     g.items.forEach((c) => sec.appendChild(popupRow(c)));
     panel.appendChild(sec);
   });
+}
+
+// Widget in Home -> Cases: kies welke cases in de homepage-carousel staan.
+async function homepageCasesWidget() {
+  const box = document.createElement('div');
+  box.className = 'group';
+  const title = document.createElement('div');
+  title.className = 'group__title'; title.textContent = 'Cases op de homepage-carousel';
+  const hint = document.createElement('p');
+  hint.className = 'list-hint'; hint.style.margin = '2px 0 12px';
+  hint.textContent = 'Vink aan welke cases in de carousel op de homepage verschijnen. De volgorde beheer je onder "Cases".';
+  box.append(title, hint);
+
+  const { data, error } = await sb.from(CASES).select('*').order('sort_order', { ascending: true });
+  if (error) { const e = document.createElement('div'); e.className = 'note'; e.textContent = 'Kon cases niet laden: ' + error.message; box.appendChild(e); return box; }
+  (data || []).forEach((c) => {
+    const row = document.createElement('div');
+    row.className = 'poprow';
+    const name = document.createElement('span');
+    name.className = 'poprow__name'; name.textContent = c.title || c.slug;
+    const spacer = document.createElement('span'); spacer.style.flex = '1';
+    const openLink = document.createElement('a');
+    openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
+    openLink.href = '/case?case=' + encodeURIComponent(c.slug);
+    openLink.target = '_blank'; openLink.rel = 'noopener'; openLink.innerHTML = SVG.open;
+    const t = toggle('Op homepage', c.highlighted);
+    t.input.addEventListener('change', async () => {
+      const { error: e } = await sb.from(CASES).update({ highlighted: t.input.checked }).eq('id', c.id);
+      if (e) { toast('Opslaan mislukt: ' + e.message, true); t.input.checked = !t.input.checked; return; }
+      c.highlighted = t.input.checked;
+      toast(t.input.checked ? 'Op homepage gezet' : 'Van homepage gehaald');
+    });
+    row.append(name, spacer, openLink, t.el);
+    box.appendChild(row);
+  });
+  return box;
 }
 
 function popupRow(c) {
