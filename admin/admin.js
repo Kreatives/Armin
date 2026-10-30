@@ -145,7 +145,8 @@ async function hrefBaselineFor(field, file) {
   const doc = await getDoc(file);
   let el = null;
   try { el = doc.querySelector(field.selector); } catch (_) {}
-  return el ? (el.getAttribute('href') || '') : '';
+  if (!el) return '';
+  return el.getAttribute('href') || el.getAttribute('data-cms-href') || '';
 }
 
 async function mediaBaseline(item, file) {
@@ -269,20 +270,22 @@ async function renderTextPage(page) {
     sec.appendChild(h);
 
     // Velden: opeenvolgende velden met dezelfde `group` -> één compacte kaart.
+    // Media met een `group` wordt binnen die kaart getoond (rechts).
     const fields = section.fields;
     let i = 0;
     while (i < fields.length) {
       if (fields[i].group) {
         const g = fields[i].group, groupFields = [];
         while (i < fields.length && fields[i].group === g) { groupFields.push(fields[i]); i++; }
-        sec.appendChild(await makeGroupCard(groupFields, page.file));
+        const groupMedia = mediaItems.filter((m) => m.group === g);
+        sec.appendChild(await makeGroupCard(groupFields, page.file, groupMedia));
       } else {
         sec.appendChild(await makeRow(fields[i], page.file)); i++;
       }
     }
 
-    // Inline media die bij deze sectie hoort.
-    const secMedia = mediaItems.filter((m) => m.section === section.label);
+    // Inline media die bij deze sectie hoort (en niet al aan een groep gekoppeld is).
+    const secMedia = mediaItems.filter((m) => m.section === section.label && !m.group);
     if (secMedia.length) {
       const mg = document.createElement('div');
       mg.className = 'media-grid media-grid--inline';
@@ -358,13 +361,21 @@ function makeHrefEditor(field, hrefBaseline) {
   input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…';
   const saved = (overrides[hkey] != null && overrides[hkey] !== '') ? overrides[hkey] : hrefBaseline;
   input.value = saved || '';
+  const current = document.createElement('div');
+  current.className = 'href-current';
+  const drawCurrent = () => {
+    const v = input.value.trim();
+    current.textContent = v ? 'Gaat nu naar: ' + v : (field.hrefHint || 'Geen link ingesteld');
+  };
+  drawCurrent();
   const savedVal = () => { const ov = overrides[hkey]; return (ov != null && ov !== '') ? ov : (hrefBaseline || ''); };
   input.addEventListener('input', () => {
+    drawCurrent();
     if (input.value !== savedVal()) pending.set(hkey, { value: input.value, baseline: hrefBaseline || '' });
     else pending.delete(hkey);
     updateSaveBar();
   });
-  wrap.append(lab, input);
+  wrap.append(lab, input, current);
   return wrap;
 }
 
@@ -391,15 +402,18 @@ async function makeRow(field, file) {
   return row;
 }
 
-// Compacte groepskaart: kop + korte velden naast elkaar.
-async function makeGroupCard(fields, file) {
+// Compacte groepskaart: kop + korte velden; optioneel media rechts ernaast.
+async function makeGroupCard(fields, file, groupMedia) {
   const card = document.createElement('div');
-  card.className = 'group';
+  card.className = 'group' + (groupMedia && groupMedia.length ? ' group--media' : '');
   const title = document.createElement('div');
   title.className = 'group__title'; title.textContent = fields[0].groupLabel || '';
+  const body = document.createElement('div');
+  body.className = 'group__body';
   const grid = document.createElement('div');
   grid.className = 'group__fields';
-  card.append(title, grid);
+  body.appendChild(grid);
+  card.append(title, body);
   for (const field of fields) {
     const { text: baseline, found } = await baselineFor(field, file);
     const mini = document.createElement('div');
@@ -410,6 +424,12 @@ async function makeGroupCard(fields, file) {
     mini.append(lab, wrap);
     if (field.href) mini.appendChild(makeHrefEditor(field, await hrefBaselineFor(field, file)));
     grid.appendChild(mini);
+  }
+  if (groupMedia && groupMedia.length) {
+    const col = document.createElement('div');
+    col.className = 'group__media';
+    for (const it of groupMedia) col.appendChild(await mediaCard(it, file));
+    body.appendChild(col);
   }
   return card;
 }
@@ -584,10 +604,10 @@ async function renderCases() {
   if (error) { panel.innerHTML = `<div class="note">Kon cases niet laden: ${error.message}</div>`; return; }
   casesData = data || [];
   panel.innerHTML = '';
-  const note = document.createElement('div');
-  note.className = 'note';
-  note.textContent = 'Logo kun je hier uploaden. Foto’s/video’s staan nog in assets/cases/<slug>/ (per-case uploaden volgt). "Soort dienst" bepaalt onder welke groep de case in de cases-popup valt.';
-  panel.appendChild(note);
+  const hint = document.createElement('p');
+  hint.className = 'list-hint';
+  hint.textContent = 'Klik op een case om te bewerken. Gebruik het open-icoon om de case in een nieuw tabblad te bekijken.';
+  panel.appendChild(hint);
   casesData.forEach((c, i) => panel.appendChild(caseCard(c, i)));
 }
 
@@ -607,13 +627,19 @@ function caseCard(c, index) {
     `<span class="flag ${o.in_popup ? 'on' : ''}">popup</span>` +
     `<span class="flag ${o.published ? 'on' : ''}">live</span>`; };
   renderFlags(c);
-  const up = document.createElement('button');
-  up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
+  const openLink = document.createElement('a');
+  openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
+  openLink.href = '../case.html?case=' + encodeURIComponent(c.slug);
+  openLink.target = '_blank'; openLink.rel = 'noopener';
+  openLink.innerHTML = SVG.open;
+  openLink.addEventListener('click', (e) => e.stopPropagation());
+  const up = iconBtn(SVG.up, 'Omhoog');
   up.addEventListener('click', (e) => { e.stopPropagation(); move(index, -1); });
-  const down = document.createElement('button');
-  down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
+  const down = iconBtn(SVG.down, 'Omlaag');
   down.addEventListener('click', (e) => { e.stopPropagation(); move(index, 1); });
-  bar.append(title, slug, flags, up, down);
+  const chevron = document.createElement('span');
+  chevron.className = 'case__chevron'; chevron.innerHTML = SVG.down;
+  bar.append(title, slug, flags, openLink, up, down, chevron);
   bar.addEventListener('click', () => card.classList.toggle('is-open'));
 
   const body = document.createElement('div');
@@ -872,13 +898,30 @@ function mediaThumbEl(item) {
   return thumb;
 }
 
-// Herbruikbare "Vervang"-knop: opent een bestandskiezer en geeft het bestand door.
+// Icon-set (inline SVG) voor de media-toolbars.
+const SVG = {
+  up:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  replace: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>',
+  trash:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>',
+  open:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>',
+};
+function iconBtn(svg, title, cls) {
+  const b = document.createElement('button');
+  b.type = 'button';
+  b.className = 'iconbtn' + (cls ? ' ' + cls : '');
+  b.title = title; b.setAttribute('aria-label', title);
+  b.innerHTML = svg;
+  return b;
+}
+
+// Herbruikbare "Vervang"-icoonknop: opent een bestandskiezer en geeft het bestand door.
 function makeReplaceBtn(accept, onFile) {
   const wrap = document.createElement('span');
+  wrap.style.display = 'inline-flex';
   const input = document.createElement('input');
   input.type = 'file'; input.accept = accept; input.hidden = true;
-  const btn = document.createElement('button');
-  btn.className = 'btn btn--ghost btn--sm'; btn.type = 'button'; btn.textContent = 'Vervang';
+  const btn = iconBtn(SVG.replace, 'Vervang');
   btn.addEventListener('click', () => input.click());
   input.addEventListener('change', () => { const f = input.files[0]; if (f) onFile(f, btn); input.value = ''; });
   wrap.append(btn, input);
@@ -886,7 +929,7 @@ function makeReplaceBtn(accept, onFile) {
 }
 
 async function replaceCaseMedia(row, file, slug, mount, btn) {
-  btn.disabled = true; btn.textContent = 'Vervangen…';
+  btn.disabled = true; btn.classList.add('is-busy');
   try {
     const { portrait, kind } = await detectPortraitKind(file);
     const ext = (file.name.split('.').pop() || (kind === 'video' ? 'mp4' : 'jpg')).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -900,7 +943,7 @@ async function replaceCaseMedia(row, file, slug, mount, btn) {
     renderCaseMediaSection(slug, mount);
   } catch (e) {
     toast('Vervangen mislukt: ' + e.message, true);
-    btn.disabled = false; btn.textContent = 'Vervang';
+    btn.disabled = false; btn.classList.remove('is-busy');
   }
 }
 
@@ -922,19 +965,21 @@ async function renderCaseMediaSection(slug, mount) {
       card.appendChild(mediaThumbEl(m));
       const bar = document.createElement('div');
       bar.className = 'cmedia__bar';
-      const up = document.createElement('button'); up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
-      const down = document.createElement('button'); down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
-      const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
+      const up = iconBtn(SVG.up, 'Omhoog'); if (i === 0) up.disabled = true;
+      const down = iconBtn(SVG.down, 'Omlaag'); if (i === rows.length - 1) down.disabled = true;
+      const del = iconBtn(SVG.trash, 'Verwijderen', 'iconbtn--danger');
       up.addEventListener('click', () => moveCaseMedia(rows, i, -1, slug, mount));
       down.addEventListener('click', () => moveCaseMedia(rows, i, 1, slug, mount));
       const rep = makeReplaceBtn('image/*,video/*', (f, btn) => replaceCaseMedia(m, f, slug, mount, btn));
       del.addEventListener('click', async () => {
-        if (!confirm('Deze media verwijderen?')) return;
+        if (!confirm('Weet je zeker dat je deze media wilt verwijderen?')) return;
         const { error: e } = await sb.from(CASE_MEDIA).delete().eq('id', m.id);
         if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
         renderCaseMediaSection(slug, mount);
       });
-      bar.append(up, down, rep, del);
+      const left = document.createElement('span'); left.className = 'cmedia__group'; left.append(up, down);
+      const right = document.createElement('span'); right.className = 'cmedia__group'; right.append(rep, del);
+      bar.append(left, right);
       card.appendChild(bar);
       grid.appendChild(card);
     });
@@ -1097,18 +1142,21 @@ async function renderMarquee() {
       const thumb = document.createElement('div'); thumb.className = 'logo-tile';
       const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; thumb.appendChild(img);
       const bar = document.createElement('div'); bar.className = 'cmedia__bar';
-      const up = document.createElement('button'); up.className = 'btn btn--ghost btn--sm'; up.textContent = '↑';
-      const down = document.createElement('button'); down.className = 'btn btn--ghost btn--sm'; down.textContent = '↓';
-      const del = document.createElement('button'); del.className = 'btn btn--ghost btn--sm btn--danger'; del.textContent = 'Verwijder';
+      const up = iconBtn(SVG.up, 'Omhoog'); if (i === 0) up.disabled = true;
+      const down = iconBtn(SVG.down, 'Omlaag'); if (i === rows.length - 1) down.disabled = true;
+      const del = iconBtn(SVG.trash, 'Verwijderen', 'iconbtn--danger');
       up.addEventListener('click', () => moveMarquee(rows, i, -1));
       down.addEventListener('click', () => moveMarquee(rows, i, 1));
       const rep = makeReplaceBtn('image/*', (f, btn) => replaceMarqueeLogo(m, f, btn));
       del.addEventListener('click', async () => {
+        if (!confirm('Weet je zeker dat je dit logo wilt verwijderen?')) return;
         const { error: e } = await sb.from(MARQUEE).delete().eq('id', m.id);
         if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
         renderMarquee();
       });
-      bar.append(up, down, rep, del); card.append(thumb, bar); grid.appendChild(card);
+      const left = document.createElement('span'); left.className = 'cmedia__group'; left.append(up, down);
+      const right = document.createElement('span'); right.className = 'cmedia__group'; right.append(rep, del);
+      bar.append(left, right); card.append(thumb, bar); grid.appendChild(card);
     });
     panel.appendChild(grid);
   } else {
@@ -1179,7 +1227,7 @@ async function uploadMarqueeLogo(file, rows, btn) {
 }
 
 async function replaceMarqueeLogo(row, file, btn) {
-  btn.disabled = true; btn.textContent = 'Vervangen…';
+  btn.disabled = true; btn.classList.add('is-busy');
   try {
     const ext = (file.name.split('.').pop() || 'png').toLowerCase().replace(/[^a-z0-9]/g, '');
     const path = 'marquee-' + Date.now() + '.' + ext;
@@ -1192,7 +1240,7 @@ async function replaceMarqueeLogo(row, file, btn) {
     renderMarquee();
   } catch (e) {
     toast('Vervangen mislukt: ' + e.message, true);
-    btn.disabled = false; btn.textContent = 'Vervang';
+    btn.disabled = false; btn.classList.remove('is-busy');
   }
 }
 
@@ -1246,6 +1294,11 @@ function popupRow(c) {
   row.className = 'poprow';
   const name = document.createElement('span');
   name.className = 'poprow__name'; name.textContent = c.title || c.slug;
+  const openLink = document.createElement('a');
+  openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
+  openLink.href = '../case.html?case=' + encodeURIComponent(c.slug);
+  openLink.target = '_blank'; openLink.rel = 'noopener'; openLink.innerHTML = SVG.open;
+  const spacer = document.createElement('span'); spacer.style.flex = '1';
   const t = toggle('In popup', c.in_popup);
   t.input.addEventListener('change', async () => {
     const { error } = await sb.from(CASES).update({ in_popup: t.input.checked }).eq('id', c.id);
@@ -1253,7 +1306,7 @@ function popupRow(c) {
     c.in_popup = t.input.checked;
     toast(t.input.checked ? 'Toegevoegd aan popup' : 'Verwijderd uit popup');
   });
-  row.append(name, t.el);
+  row.append(name, spacer, openLink, t.el);
   return row;
 }
 

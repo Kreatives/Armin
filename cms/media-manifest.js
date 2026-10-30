@@ -10,12 +10,14 @@
      section  sectie-label waar de foto bij hoort (voor inline weergave)
    ========================================================= */
 (function () {
-  const m = (key, label, selector, section, attr = 'src') => ({ key, label, selector, section, attr });
+  const m = (key, label, selector, section, attr = 'src', group = null) => ({ key, label, selector, section, attr, group });
 
+  // Story-achtergronden horen bij hun eigen story-kaart (groep about-story-N),
+  // zodat de media in de editor naast de kaart staat i.p.v. onderaan de sectie.
   const storyBg = [];
   for (let i = 1; i <= 8; i++) {
-    storyBg.push(m(`about.media.story${i}`, `Story-kaart ${i}`,
-      `.ab-story__track > .ab-story__card:nth-of-type(${i})`, '02 — The story', 'data-bg'));
+    storyBg.push(m(`about.media.story${i}`, `Achtergrond`,
+      `.ab-story__track > .ab-story__card:nth-of-type(${i})`, '02 — The story', 'data-bg', `about-story-${i}`));
   }
   const featImgs = [1, 2, 3, 4, 7, 8, 9].map((i) =>
     m(`about.media.feat${i}`, `Featured ${i}`,

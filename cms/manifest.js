@@ -142,7 +142,7 @@
           ]},
           { label: 'Cases', fields: [
             f('home.work.title', 'Titel', '.work__title'),
-            f('home.work.cta',   'Knop',  '.work [data-open-diensten]'),
+            f('home.work.cta',   'Knop',  '.work [data-open-diensten]', { href: true, hrefHint: 'Leeg laten = opent de cases-overlay. Vul een link in om ergens heen te gaan.' }),
           ]},
           { label: 'Over Armin (uitgebreid)', fields: [
             f('home.about.label', 'Label',              '.about__lead .about__label'),

@@ -710,7 +710,12 @@ function buildDiensten() {
   renderDienstCards(0);
   setDienst(0, true);
 
-  document.querySelectorAll('[data-open-diensten]').forEach(b => b.addEventListener('click', openDiensten));
+  document.querySelectorAll('[data-open-diensten]').forEach(b => b.addEventListener('click', (e) => {
+    // Als er in het CMS een link is ingevuld -> daarheen navigeren i.p.v. de overlay openen.
+    const href = b.getAttribute('data-cms-href');
+    if (href) { e.preventDefault(); window.location.href = href; return; }
+    openDiensten();
+  }));
   const closeBtn = document.querySelector('[data-diensten-close]');
   if (closeBtn) closeBtn.addEventListener('click', closeDiensten);
   window.addEventListener('keydown', e => { if (e.key === 'Escape' && dienstOverlay().classList.contains('is-open')) closeDiensten(); });

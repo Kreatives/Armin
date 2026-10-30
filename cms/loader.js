@@ -73,7 +73,11 @@ function applyTexts(rows) {
       const el = document.querySelector(fld.selector);
       if (!el) return;
       if (hasText) window.CMS.applyField(el, map[fld.key], fld.mode);
-      if (hasHref) el.setAttribute('href', map[hrefKey]);
+      if (hasHref) {
+        // <a> krijgt href; een knop/button krijgt data-cms-href (script.js leest dat).
+        if (el.tagName === 'A') el.setAttribute('href', map[hrefKey]);
+        else el.setAttribute('data-cms-href', map[hrefKey]);
+      }
     } catch (_) { /* ongeldige selector: negeren, origineel blijft staan */ }
   });
 }
