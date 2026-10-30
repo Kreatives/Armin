@@ -149,6 +149,8 @@ body {
 }
 .hero__title .word + .word { margin-inline-start: 0.28em; }
 .hero__title .char { display: inline-block; will-change: transform; }
+/* Masker vrijgeven na de reveal -> letters niet meer afgesneden, titel scrollt vol uit beeld */
+.hero__title.is-revealed .word { overflow: visible; }
 
 .hero__meta {
   display: flex;

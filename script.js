@@ -132,10 +132,13 @@ function splitTitle() {
   return chars;
 }
 function revealTitle() {
-  if (reducedMotion) { gsap.set(titleChars, { yPercent: 0, opacity: 1 }); return; }
+  // Na de reveal het woord-masker vrijgeven, zodat de letters niet meer aan de
+  // bovenkant worden afgesneden en de titel netjes het scherm uit scrollt.
+  if (reducedMotion) { gsap.set(titleChars, { yPercent: 0, opacity: 1 }); titleEl.classList.add('is-revealed'); return; }
   gsap.fromTo(titleChars,
     { yPercent: 115, opacity: 0 },
-    { yPercent: 0, opacity: 1, duration: 0.9, ease: 'power4.out', stagger: 0.045 });
+    { yPercent: 0, opacity: 1, duration: 0.9, ease: 'power4.out', stagger: 0.045,
+      onComplete: () => titleEl.classList.add('is-revealed') });
 }
 
 /* ---- Service-objecten opbouwen ------------------------- */
