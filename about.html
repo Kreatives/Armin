@@ -466,10 +466,12 @@
   (function () {
     var dock = document.querySelector('.dock');
     if (!dock) return;
-    var hero = document.querySelector('.hero, .ab-hero');
+    var trigger = document.querySelector('#story');
     function upd() {
-      var threshold = hero ? Math.max(hero.offsetHeight - 140, 120) : 90;
-      dock.classList.toggle('is-visible', window.scrollY > threshold);
+      var show = trigger
+        ? trigger.getBoundingClientRect().top < window.innerHeight * 0.5
+        : window.scrollY > window.innerHeight;
+      dock.classList.toggle('is-visible', show);
     }
     upd();
     window.addEventListener('scroll', upd, { passive: true });
