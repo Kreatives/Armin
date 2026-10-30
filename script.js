@@ -791,6 +791,7 @@ function setupHighlight() {
   });
 }
 
+const SUBSTACK_URL = 'https://substack.com/@arminshah';
 function setupNewsletter() {
   const form = document.querySelector('[data-newsletter]');
   if (!form) return;
@@ -799,7 +800,9 @@ function setupNewsletter() {
     e.preventDefault();
     const email = (form.email.value || '').trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { note.textContent = 'Please enter a valid email address.'; return; }
-    note.textContent = 'Thanks, you’re on the list.';
+    // Afronden op Substack (met e-mail voorgevuld).
+    note.textContent = 'Taking you to Substack…';
+    window.open(SUBSTACK_URL + '?email=' + encodeURIComponent(email), '_blank', 'noopener');
     form.reset();
   });
 }

@@ -169,7 +169,6 @@
         id: 'about', label: 'About', file: 'about.html',
         sections: [
           { label: '01 — Opening', fields: [
-            f('about.nav.back',     'Terug-link (bovenaan)', '.ab-header__back', { href: true }),
             f('about.hero.eyebrow', 'Label',        '.ab-hero__top .ab-eyebrow'),
             f('about.hero.title',   'Grote titel (gebruik <br> voor nieuwe regel)', '.ab-hero__big', { mode: 'html' }),
             f('about.hero.meta1', 'Meta', '.ab-hero__meta span:nth-of-type(1)'),
