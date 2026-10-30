@@ -614,7 +614,7 @@ async function mediaCard(item, file) {
 
   const card = document.createElement('div');
   card.className = 'mediacard';
-  card.style.cssText = 'display:flex;flex-direction:column;';
+  card.style.cssText = 'position:static;display:flex;flex-direction:column;overflow:hidden;border-radius:12px;border:1px solid #e7e9ee;background:#fff;';
 
   const thumb = document.createElement('div');
   thumb.className = 'mediacard__thumb';
@@ -629,6 +629,8 @@ async function mediaCard(item, file) {
 
   const body = document.createElement('div');
   body.className = 'mediacard__body';
+  // Inline: body staat ALTIJD als statisch blok onder de foto (nooit eroverheen).
+  body.style.cssText = 'position:static;padding:12px 14px;display:flex;flex-direction:column;gap:10px;background:#fff;';
   const label = document.createElement('div');
   label.className = 'mediacard__label'; label.textContent = item.label;
   const status = document.createElement('div');
