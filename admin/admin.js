@@ -614,11 +614,15 @@ async function mediaCard(item, file) {
 
   const card = document.createElement('div');
   card.className = 'mediacard';
+  card.style.cssText = 'display:flex;flex-direction:column;';
 
   const thumb = document.createElement('div');
   thumb.className = 'mediacard__thumb';
+  // Inline-styles: bulletproof tegen gecachte oude CSS.
+  thumb.style.cssText = 'height:160px;background:#1c1f24;display:grid;place-items:center;flex:none;';
   const img = document.createElement('img');
   img.alt = ''; img.loading = 'lazy';
+  img.style.cssText = 'width:100%;height:100%;object-fit:contain;display:block;';
   img.src = displaySrc(shown);
   img.onerror = () => { thumb.textContent = 'Geen voorbeeld'; };
   thumb.appendChild(img);
@@ -1003,13 +1007,17 @@ function detectPortraitKind(file) {
 function mediaThumbEl(item) {
   const thumb = document.createElement('div');
   thumb.className = 'cmedia__thumb' + (item.portrait ? ' is-portrait' : '');
+  thumb.style.cssText = 'height:160px;background:#1c1f24;display:grid;place-items:center;';
   const src = displaySrc(item.src || item.url);
+  const fit = 'width:100%;height:100%;object-fit:contain;display:block;';
   if ((item.kind || '') === 'video') {
     const v = document.createElement('video');
     v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true;
+    v.style.cssText = fit;
     thumb.appendChild(v);
   } else {
     const img = document.createElement('img'); img.src = src; img.loading = 'lazy';
+    img.style.cssText = fit;
     thumb.appendChild(img);
   }
   return thumb;
@@ -1266,8 +1274,8 @@ async function renderMarquee() {
   if (rows.length) {
     rows.forEach((m, i) => {
       const card = document.createElement('div'); card.className = 'cmedia';
-      const thumb = document.createElement('div'); thumb.className = 'logo-tile';
-      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; thumb.appendChild(img);
+           const thumb = document.createElement('div'); thumb.className = 'logo-tile'; thumb.style.cssText = 'height:130px;background:#1c1f24;display:grid;place-items:center;padding:16px;';
+      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;'; thumb.appendChild(img);
       const bar = document.createElement('div'); bar.className = 'cmedia__bar';
       const up = iconBtn(SVG.up, 'Omhoog'); if (i === 0) up.disabled = true;
       const down = iconBtn(SVG.down, 'Omlaag'); if (i === rows.length - 1) down.disabled = true;
@@ -1292,8 +1300,8 @@ async function renderMarquee() {
     panel.appendChild(n2);
     DEFAULT_MARQUEE.forEach((m) => {
       const card = document.createElement('div'); card.className = 'cmedia';
-      const thumb = document.createElement('div'); thumb.className = 'logo-tile';
-      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; thumb.appendChild(img);
+           const thumb = document.createElement('div'); thumb.className = 'logo-tile'; thumb.style.cssText = 'height:130px;background:#1c1f24;display:grid;place-items:center;padding:16px;';
+      const img = document.createElement('img'); img.src = displaySrc(m.url); img.loading = 'lazy'; img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;'; thumb.appendChild(img);
       card.appendChild(thumb); grid.appendChild(card);
     });
     panel.appendChild(grid);
