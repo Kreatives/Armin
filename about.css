@@ -108,7 +108,9 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
 .ab-story__viewport::-webkit-scrollbar { display: none; }
 .ab-story__track { position: relative; display: flex; gap: clamp(1.25rem, 2.2vw, 2rem); width: max-content; padding-top: 4.5rem; }
 /* Timeline: horizontale lijn die rechts het scherm uitloopt, met een tick + jaartal per kaart. */
-.ab-story__track::before { content: ""; position: absolute; top: 3.25rem; left: 0; right: -100vw; height: 1px; background: rgba(247, 245, 240, 0.18); }
+.ab-story__track::before { content: ""; position: absolute; top: 3.25rem; left: 0; right: 0; height: 1px; background: rgba(247, 245, 240, 0.18); }
+/* Play-knoppen op featured doen niets -> verbergen */
+.ab-feat__play { display: none; }
 .ab-story__card { position: relative; }
 .ab-story__card::before { content: ""; position: absolute; top: calc(-1.25rem - 8px); left: clamp(1.5rem, 2.4vw, 2.25rem); width: 2px; height: 16px; background: var(--orange); }
 .ab-story__card {

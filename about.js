@@ -244,8 +244,24 @@
     };
     const prev = document.querySelector(prevSel);
     const next = document.querySelector(nextSel);
+    const maxScroll = () => vp.scrollWidth - vp.clientWidth;
+    // Dim de pijl aan begin/eind (en maak 'm niet-klikbaar daar).
+    const setArrow = (btn, disabled) => {
+      if (!btn) return;
+      btn.style.opacity = disabled ? '0.3' : '1';
+      btn.style.pointerEvents = disabled ? 'none' : 'auto';
+      btn.style.transition = 'opacity 0.3s var(--ease-out)';
+    };
+    const updateArrows = () => {
+      const x = vp.scrollLeft, max = maxScroll();
+      setArrow(prev, x <= 2);
+      setArrow(next, x >= max - 2);
+    };
     if (prev) prev.addEventListener('click', () => vp.scrollBy({ left: -step(), behavior: 'smooth' }));
     if (next) next.addEventListener('click', () => vp.scrollBy({ left: step(), behavior: 'smooth' }));
+    vp.addEventListener('scroll', updateArrows, { passive: true });
+    window.addEventListener('resize', updateArrows);
+    setTimeout(updateArrows, 100);
   }
 
   // Video lightbox: Watch-knoppen en afspeelbare kaarten openen de YouTube-embed
