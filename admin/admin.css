@@ -266,11 +266,54 @@ a.iconbtn { text-decoration: none; }
 .picker__item img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
 /* Per-case media-tegels */
-.cmedia { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow); }
+.cmedia { position: relative; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow); }
 .cmedia__thumb { height: 150px; background: #1c1f24; display: grid; place-items: center; }
 .cmedia__thumb img, .cmedia__thumb video { width: 100%; height: 100%; object-fit: contain; display: block; }
+.cmedia__x {
+  position: absolute; top: 8px; right: 8px; z-index: 2; width: 28px; height: 28px;
+  border: none; border-radius: 7px; background: rgba(16,24,40,.6); color: #fff;
+  display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(2px);
+}
+.cmedia__x:hover { background: var(--danger); }
+.cmedia__x svg { width: 15px; height: 15px; }
 .cmedia__bar { display: flex; gap: 6px; padding: 8px; justify-content: space-between; background: var(--surface); border-top: 1px solid var(--line-2); }
 .cmedia__group { display: inline-flex; gap: 6px; }
+
+/* "Voeg media toe" card */
+.addcard {
+  border: 2px dashed var(--line); border-radius: 10px; background: var(--bg);
+  min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 6px; cursor: pointer; color: var(--muted); font: inherit; transition: border-color .12s, color .12s, background .12s;
+}
+.addcard:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.addcard.is-busy { opacity: .5; pointer-events: none; }
+.addcard__plus { font-size: 28px; font-weight: 300; line-height: 1; }
+.addcard__label { font-size: 13px; font-weight: 600; }
+
+/* Custom dropdown */
+.dd { position: relative; }
+.dd__btn {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px;
+  font: inherit; color: var(--text); cursor: pointer; text-align: left;
+}
+.dd__btn:hover { border-color: #cfd3da; }
+.dd__btn.is-open { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.dd__btnlabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd__caret { color: var(--muted); display: inline-grid; place-items: center; }
+.dd__caret svg { width: 16px; height: 16px; }
+.dd__menu {
+  position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; right: 0; max-height: 300px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px;
+  box-shadow: 0 12px 34px rgba(16,24,40,.14);
+}
+.dd__group { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-2); font-weight: 700; padding: 8px 10px 4px; }
+.dd__opt {
+  display: block; width: 100%; text-align: left; border: none; background: transparent; cursor: pointer;
+  font: inherit; color: var(--text); padding: 8px 10px; border-radius: 7px;
+}
+.dd__opt:hover { background: #f1f2f5; }
+.dd__opt.is-sel { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .logo-tile { height: 130px; background: #1c1f24; display: grid; place-items: center; padding: 16px; }
 .logo-tile img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .cmedia__actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }

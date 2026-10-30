@@ -389,8 +389,7 @@ function makeHrefEditor(field, hrefBaseline) {
   edit.className = 'href-form'; edit.hidden = true;
   const lab = document.createElement('div');
   lab.className = 'mini__label'; lab.textContent = 'Waar gaat deze knop/link heen?';
-  const select = document.createElement('select');
-  select.className = 'field__input';
+  const ddMount = document.createElement('div');
   const input = document.createElement('input');
   input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…'; input.hidden = true;
   const row = document.createElement('div'); row.className = 'href-form__row';
@@ -399,11 +398,10 @@ function makeHrefEditor(field, hrefBaseline) {
   const doneBtn = document.createElement('button');
   doneBtn.type = 'button'; doneBtn.className = 'btn btn--ghost btn--sm'; doneBtn.textContent = 'Klaar';
   row.append(resetBtn, doneBtn);
-  edit.append(lab, select, input, row);
+  edit.append(lab, ddMount, input, row);
 
   const savedVal = () => { const ov = overrides[hkey]; return (ov != null && ov !== '') ? ov : (hrefBaseline || ''); };
 
-  // effectieve waarde toepassen -> view + opslaan-balk
   const apply = (v) => {
     text.innerHTML = v
       ? '🔗 Gaat nu naar: <b>' + String(v).replace(/</g, '&lt;') + '</b>'
@@ -414,48 +412,88 @@ function makeHrefEditor(field, hrefBaseline) {
   };
   apply(savedVal());
 
+  let dd = null;
+  const onPick = (v) => {
+    if (v === CUSTOM) { input.hidden = false; input.focus(); apply(input.value.trim()); }
+    else if (v === OVERLAY) { input.hidden = true; apply(''); }
+    else { input.hidden = true; apply(v); }
+  };
+
   let built = false;
-  async function buildSelect() {
+  async function buildForm() {
     if (built) return; built = true;
     const cur = savedVal();
-    const mk = (label, value) => { const o = document.createElement('option'); o.textContent = label; o.value = value; return o; };
-    if (field.hrefHint) select.appendChild(mk('Cases-overlay openen (standaard)', OVERLAY));
-    const gPages = document.createElement('optgroup'); gPages.label = 'Pagina’s';
-    PAGE_LINK_OPTIONS.forEach((o) => gPages.appendChild(mk(o.label, o.value)));
-    select.appendChild(gPages);
+    const groups = [];
+    if (field.hrefHint) groups.push({ label: '', options: [{ label: 'Cases-overlay openen (standaard)', value: OVERLAY }] });
+    groups.push({ label: 'Pagina’s', options: PAGE_LINK_OPTIONS });
     const cases = await getCaseLinkOptions();
-    if (cases.length) {
-      const gCases = document.createElement('optgroup'); gCases.label = 'Cases';
-      cases.forEach((o) => gCases.appendChild(mk(o.label, o.value)));
-      select.appendChild(gCases);
-    }
-    select.appendChild(mk('Eigen link (URL)…', CUSTOM));
-    // Huidige waarde selecteren.
-    const known = [...select.querySelectorAll('option')].some((o) => o.value === cur && o.value !== CUSTOM && o.value !== OVERLAY);
-    if (cur === '' && field.hrefHint) select.value = OVERLAY;
-    else if (known) select.value = cur;
-    else { select.value = CUSTOM; input.hidden = false; input.value = cur; }
+    if (cases.length) groups.push({ label: 'Cases', options: cases });
+    groups.push({ label: '', options: [{ label: 'Eigen link (URL)…', value: CUSTOM }] });
+
+    const flat = groups.flatMap((g) => g.options);
+    const known = flat.some((o) => o.value === cur);
+    const initial = (cur === '' && field.hrefHint) ? OVERLAY : (known ? cur : CUSTOM);
+    dd = customDropdown({ groups, value: initial, placeholder: 'Kies een bestemming…', onChange: onPick });
+    ddMount.appendChild(dd.root);
+    if (initial === CUSTOM) { input.hidden = false; input.value = cur; }
   }
 
-  select.addEventListener('change', () => {
-    if (select.value === CUSTOM) { input.hidden = false; input.focus(); apply(input.value.trim()); }
-    else if (select.value === OVERLAY) { input.hidden = true; apply(''); }
-    else { input.hidden = true; apply(select.value); }
-  });
   input.addEventListener('input', () => apply(input.value.trim()));
   resetBtn.addEventListener('click', () => {
     const base = hrefBaseline || '';
-    const opt = [...select.querySelectorAll('option')].find((o) => o.value === base);
-    if (base === '' && field.hrefHint) { select.value = OVERLAY; input.hidden = true; }
-    else if (opt) { select.value = base; input.hidden = true; }
-    else { select.value = CUSTOM; input.hidden = false; input.value = base; }
+    const flat = (dd ? dd.options() : []);
+    const known = flat.some((o) => o.value === base);
+    if (base === '' && field.hrefHint) { if (dd) dd.setValue(OVERLAY); input.hidden = true; }
+    else if (known) { if (dd) dd.setValue(base); input.hidden = true; }
+    else { if (dd) dd.setValue(CUSTOM); input.hidden = false; input.value = base; }
     apply(base);
   });
-  editBtn.addEventListener('click', () => { edit.hidden = false; view.hidden = true; buildSelect(); });
+  editBtn.addEventListener('click', () => { edit.hidden = false; view.hidden = true; buildForm(); });
   doneBtn.addEventListener('click', () => { edit.hidden = true; view.hidden = false; });
 
   wrap.append(view, edit);
   return wrap;
+}
+
+// Zelfgebouwde dropdown: knop + popup-lijst met groepen. Vervangt de native select.
+function customDropdown({ groups, value, placeholder, onChange }) {
+  const flat = groups.flatMap((g) => g.options);
+  const root = document.createElement('div');
+  root.className = 'dd';
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'dd__btn';
+  const btnLabel = document.createElement('span'); btnLabel.className = 'dd__btnlabel';
+  const caret = document.createElement('span'); caret.className = 'dd__caret'; caret.innerHTML = SVG.down;
+  btn.append(btnLabel, caret);
+  const menu = document.createElement('div');
+  menu.className = 'dd__menu'; menu.hidden = true;
+
+  let current = value;
+  const labelFor = (v) => { const o = flat.find((x) => x.value === v); return o ? o.label : (placeholder || 'Kies…'); };
+  const drawBtn = () => { btnLabel.textContent = labelFor(current); };
+  drawBtn();
+
+  const opts = [];
+  groups.forEach((g) => {
+    if (g.label) { const h = document.createElement('div'); h.className = 'dd__group'; h.textContent = g.label; menu.appendChild(h); }
+    g.options.forEach((o) => {
+      const item = document.createElement('button');
+      item.type = 'button'; item.className = 'dd__opt'; item.textContent = o.label; item.dataset.value = o.value;
+      item.addEventListener('click', () => { select(o.value); close(); onChange(o.value); });
+      menu.appendChild(item); opts.push(item);
+    });
+  });
+  const mark = () => opts.forEach((it) => it.classList.toggle('is-sel', it.dataset.value === current));
+  mark();
+
+  function select(v) { current = v; drawBtn(); mark(); }
+  function open() { menu.hidden = false; btn.classList.add('is-open'); document.addEventListener('mousedown', outside); }
+  function close() { menu.hidden = true; btn.classList.remove('is-open'); document.removeEventListener('mousedown', outside); }
+  function outside(e) { if (!root.contains(e.target)) close(); }
+  btn.addEventListener('click', () => (menu.hidden ? open() : close()));
+
+  root.append(btn, menu);
+  return { root, setValue: (v) => select(v), options: () => flat };
 }
 
 // Losse rij: label + "Nu" links, invoer rechts (voor lange, op zichzelf staande teksten).
@@ -1026,81 +1064,94 @@ async function replaceCaseMedia(row, file, slug, mount, btn) {
   }
 }
 
+// Zorg dat de media in de DB staat (schijf-media wordt stilletjes overgenomen),
+// zodat je kunt herordenen/verwijderen/vervangen. Geeft de actuele DB-rijen terug.
+async function ensureCaseRows(slug) {
+  const { data } = await sb.from(CASE_MEDIA).select('*').eq('slug', slug).order('sort_order', { ascending: true });
+  let rows = data || [];
+  if (!rows.length) {
+    const disk = diskMediaFor(slug);
+    if (disk.length) {
+      await importDiskMedia(slug, disk);
+      const res = await sb.from(CASE_MEDIA).select('*').eq('slug', slug).order('sort_order', { ascending: true });
+      rows = res.data || [];
+    }
+  }
+  return rows;
+}
+
 async function renderCaseMediaSection(slug, mount) {
   mount.innerHTML = '<div class="loading" style="padding:10px 0">Media laden…</div>';
   const { data, error } = await sb.from(CASE_MEDIA).select('*').eq('slug', slug).order('sort_order', { ascending: true });
   if (error) { mount.innerHTML = `<div class="note">Kon media niet laden: ${error.message}</div>`; return; }
   const rows = data || [];
   const disk = diskMediaFor(slug);
+  // Toon DB-media indien aanwezig, anders de schijf-media. Alle acties werken op beide.
+  const entries = rows.length ? rows.map((r) => ({ src: r.url, portrait: r.portrait, kind: r.kind, id: r.id }))
+                              : disk.map((d, i) => ({ src: d.src, portrait: d.portrait, kind: d.kind, diskIndex: i }));
   mount.innerHTML = '';
 
   const grid = document.createElement('div');
   grid.className = 'media-grid media-grid--inline';
+  entries.forEach((entry, i) => grid.appendChild(caseMediaTile(entry, i, entries.length, slug, mount)));
+  grid.appendChild(addMediaCard(slug, mount));
+  mount.appendChild(grid);
+}
 
-  if (rows.length) {
-    rows.forEach((m, i) => {
-      const card = document.createElement('div');
-      card.className = 'cmedia';
-      card.appendChild(mediaThumbEl(m));
-      const bar = document.createElement('div');
-      bar.className = 'cmedia__bar';
-      const up = iconBtn(SVG.up, 'Omhoog'); if (i === 0) up.disabled = true;
-      const down = iconBtn(SVG.down, 'Omlaag'); if (i === rows.length - 1) down.disabled = true;
-      const del = iconBtn(SVG.trash, 'Verwijderen', 'iconbtn--danger');
-      up.addEventListener('click', () => moveCaseMedia(rows, i, -1, slug, mount));
-      down.addEventListener('click', () => moveCaseMedia(rows, i, 1, slug, mount));
-      const rep = makeReplaceBtn('image/*,video/*', (f, btn) => replaceCaseMedia(m, f, slug, mount, btn));
-      del.addEventListener('click', async () => {
-        if (!confirm('Weet je zeker dat je deze media wilt verwijderen?')) return;
-        const { error: e } = await sb.from(CASE_MEDIA).delete().eq('id', m.id);
-        if (e) { toast('Verwijderen mislukt: ' + e.message, true); return; }
-        renderCaseMediaSection(slug, mount);
-      });
-      const left = document.createElement('span'); left.className = 'cmedia__group'; left.append(up, down);
-      const right = document.createElement('span'); right.className = 'cmedia__group'; right.append(rep, del);
-      bar.append(left, right);
-      card.appendChild(bar);
-      grid.appendChild(card);
-    });
-    mount.appendChild(grid);
-  } else if (disk.length) {
-    const note = document.createElement('div');
-    note.className = 'note';
-    note.textContent = 'Deze media staat nu op schijf. Klik "Overnemen" om ze in het CMS te kunnen herordenen, verwijderen en aanvullen.';
-    mount.appendChild(note);
-    disk.forEach((m) => { const card = document.createElement('div'); card.className = 'cmedia'; card.appendChild(mediaThumbEl(m)); grid.appendChild(card); });
-    mount.appendChild(grid);
-  } else {
-    const p = document.createElement('p');
-    p.className = 'row__current'; p.textContent = 'Nog geen media.';
-    mount.appendChild(p);
-  }
+function caseMediaTile(entry, index, count, slug, mount) {
+  const card = document.createElement('div');
+  card.className = 'cmedia';
+  card.appendChild(mediaThumbEl(entry));
 
-  // Acties
-  const actions = document.createElement('div');
-  actions.className = 'cmedia__actions';
+  // X rechtsboven -> verwijderen met bevestiging.
+  const x = document.createElement('button');
+  x.type = 'button'; x.className = 'cmedia__x'; x.title = 'Verwijderen'; x.setAttribute('aria-label', 'Verwijderen');
+  x.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  x.addEventListener('click', async () => {
+    if (!confirm('Weet je zeker dat je deze media wilt verwijderen?')) return;
+    const rows = await ensureCaseRows(slug);
+    const target = rows[index];
+    if (!target) { renderCaseMediaSection(slug, mount); return; }
+    const { error } = await sb.from(CASE_MEDIA).delete().eq('id', target.id);
+    if (error) { toast('Verwijderen mislukt: ' + error.message, true); return; }
+    toast('Media verwijderd');
+    renderCaseMediaSection(slug, mount);
+  });
+  card.appendChild(x);
+
+  // Onderbalk: herordenen + vervangen.
+  const bar = document.createElement('div');
+  bar.className = 'cmedia__bar';
+  const up = iconBtn(SVG.up, 'Omhoog'); if (index === 0) up.disabled = true;
+  const down = iconBtn(SVG.down, 'Omlaag'); if (index === count - 1) down.disabled = true;
+  up.addEventListener('click', async () => { const rows = await ensureCaseRows(slug); moveCaseMedia(rows, index, -1, slug, mount); });
+  down.addEventListener('click', async () => { const rows = await ensureCaseRows(slug); moveCaseMedia(rows, index, 1, slug, mount); });
+  const rep = makeReplaceBtn('image/*,video/*', async (f, btn) => {
+    const rows = await ensureCaseRows(slug);
+    const target = rows[index];
+    if (target) replaceCaseMedia(target, f, slug, mount, btn);
+  });
+  const left = document.createElement('span'); left.className = 'cmedia__group'; left.append(up, down);
+  bar.append(left, rep);
+  card.appendChild(bar);
+  return card;
+}
+
+// Card "Voeg media toe" (dashed) aan het einde van het grid.
+function addMediaCard(slug, mount) {
+  const card = document.createElement('button');
+  card.type = 'button'; card.className = 'addcard';
+  card.innerHTML = '<span class="addcard__plus">+</span><span class="addcard__label">Voeg media toe</span>';
   const fileInput = document.createElement('input');
   fileInput.type = 'file'; fileInput.accept = 'image/*,video/*'; fileInput.hidden = true;
-  const addBtn = document.createElement('button');
-  addBtn.className = 'btn btn--primary btn--sm'; addBtn.type = 'button'; addBtn.textContent = '+ Media toevoegen';
-  addBtn.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', () => {
+  card.appendChild(fileInput);
+  card.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
     const file = fileInput.files[0];
-    if (file) addCaseMedia(slug, file, rows, disk, mount, addBtn);
+    if (file) { card.classList.add('is-busy'); await addCaseMedia(slug, file, await ensureCaseRows(slug), [], mount, card); }
     fileInput.value = '';
   });
-  actions.append(addBtn, fileInput);
-  if (!rows.length && disk.length) {
-    const take = document.createElement('button');
-    take.className = 'btn btn--sm'; take.type = 'button'; take.textContent = 'Overnemen om te bewerken';
-    take.addEventListener('click', async () => {
-      take.disabled = true; take.textContent = 'Bezig…';
-      try { await importDiskMedia(slug, disk); renderCaseMediaSection(slug, mount); }
-      catch (e) { take.disabled = false; take.textContent = 'Overnemen om te bewerken'; toast('Overnemen mislukt: ' + e.message, true); }
-    });
-    actions.appendChild(take);
-  }
-  mount.appendChild(actions);
+  return card;
 }
 
 async function importDiskMedia(slug, disk) {
@@ -1109,12 +1160,9 @@ async function importDiskMedia(slug, disk) {
   if (error) throw error;
 }
 
-async function addCaseMedia(slug, file, rows, disk, mount, btn) {
-  btn.disabled = true; btn.textContent = 'Uploaden…';
+async function addCaseMedia(slug, file, rows, disk, mount) {
   try {
-    // Eerst schijf-media overnemen zodat die niet verdwijnt.
-    let base = rows;
-    if (!rows.length && disk.length) { await importDiskMedia(slug, disk); base = disk.map((_, i) => ({ sort_order: i })); }
+    const base = rows && rows.length ? rows : [];
     const maxOrder = base.reduce((m, r) => Math.max(m, r.sort_order || 0), -1);
     const { portrait, kind } = await detectPortraitKind(file);
     const ext = (file.name.split('.').pop() || (kind === 'video' ? 'mp4' : 'jpg')).toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1128,7 +1176,7 @@ async function addCaseMedia(slug, file, rows, disk, mount, btn) {
     renderCaseMediaSection(slug, mount);
   } catch (e) {
     toast('Toevoegen mislukt: ' + e.message, true);
-    btn.disabled = false; btn.textContent = '+ Media toevoegen';
+    renderCaseMediaSection(slug, mount);
   }
 }
 
