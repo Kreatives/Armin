@@ -1034,6 +1034,7 @@ const SVG = {
   replace: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>',
   trash:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>',
   open:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14 21 3"/></svg>',
+  grip:    '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
 };
 function iconBtn(svg, title, cls) {
   const b = document.createElement('button');
@@ -1428,27 +1429,44 @@ async function renderPopup() {
   });
 }
 
-// Widget in Home -> Cases: kies welke cases in de homepage-carousel staan.
+// Widget in Home -> Cases: kies welke cases op de homepage staan + sleep de volgorde.
 async function homepageCasesWidget() {
   const box = document.createElement('div');
-  box.className = 'group';
-  const title = document.createElement('div');
-  title.className = 'group__title'; title.textContent = 'Cases op de homepage-carousel';
+  box.className = 'group collapse';
+  const head = document.createElement('button');
+  head.type = 'button'; head.className = 'collapse__head';
+  head.innerHTML = '<span class="group__title" style="margin:0">Cases op de homepage-carousel</span>'
+    + '<span class="collapse__chevron">' + SVG.down + '</span>';
+  const bodyWrap = document.createElement('div');
+  bodyWrap.className = 'collapse__body'; bodyWrap.hidden = true;
+  head.addEventListener('click', () => {
+    bodyWrap.hidden = !bodyWrap.hidden;
+    box.classList.toggle('is-open', !bodyWrap.hidden);
+  });
+  box.append(head, bodyWrap);
+
   const hint = document.createElement('p');
   hint.className = 'list-hint'; hint.style.margin = '2px 0 12px';
-  hint.textContent = 'Vink aan welke cases in de carousel op de homepage verschijnen. De volgorde beheer je onder "Cases".';
-  box.append(title, hint);
+  hint.textContent = 'Vink aan welke cases op de homepage verschijnen. Sleep aan de greep om de volgorde van de carousel te bepalen.';
+  bodyWrap.appendChild(hint);
+
+  const list = document.createElement('div');
+  list.className = 'draglist';
+  bodyWrap.appendChild(list);
 
   const { data, error } = await sb.from(CASES).select('*').order('sort_order', { ascending: true });
-  if (error) { const e = document.createElement('div'); e.className = 'note'; e.textContent = 'Kon cases niet laden: ' + error.message; box.appendChild(e); return box; }
+  if (error) { const e = document.createElement('div'); e.className = 'note'; e.textContent = 'Kon cases niet laden: ' + error.message; bodyWrap.appendChild(e); return box; }
+
   (data || []).forEach((c) => {
     const row = document.createElement('div');
-    row.className = 'poprow';
+    row.className = 'poprow poprow--drag'; row.dataset.id = c.id;
+    const grip = document.createElement('span');
+    grip.className = 'drag-grip'; grip.title = 'Sleep om te herordenen'; grip.innerHTML = SVG.grip;
     const name = document.createElement('span');
     name.className = 'poprow__name'; name.textContent = c.title || c.slug;
     const spacer = document.createElement('span'); spacer.style.flex = '1';
     const openLink = document.createElement('a');
-    openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
+    openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad'; openLink.draggable = false;
     openLink.href = '/case?case=' + encodeURIComponent(c.slug);
     openLink.target = '_blank'; openLink.rel = 'noopener'; openLink.innerHTML = SVG.open;
     const t = toggle('Op homepage', c.highlighted);
@@ -1458,10 +1476,52 @@ async function homepageCasesWidget() {
       c.highlighted = t.input.checked;
       toast(t.input.checked ? 'Op homepage gezet' : 'Van homepage gehaald');
     });
-    row.append(name, spacer, openLink, t.el);
-    box.appendChild(row);
+    row.append(grip, name, spacer, openLink, t.el);
+    list.appendChild(row);
+  });
+
+  enableDragSort(list, async (orderedIds) => {
+    await Promise.all(orderedIds.map((id, i) => sb.from(CASES).update({ sort_order: i + 1 }).eq('id', id)));
+    toast('Volgorde opgeslagen ✓');
   });
   return box;
+}
+
+// Sleep-herordening voor een lijst met .poprow-rijen (grip = .drag-grip).
+function enableDragSort(list, onReorder) {
+  let dragEl = null;
+  list.querySelectorAll('.poprow').forEach((row) => {
+    const grip = row.querySelector('.drag-grip');
+    // Alleen slepen vanaf de greep (zodat klikken op toggle/link werkt).
+    if (grip) {
+      grip.addEventListener('mousedown', () => { row.draggable = true; });
+      document.addEventListener('mouseup', () => { row.draggable = false; });
+    }
+    row.addEventListener('dragstart', (e) => { dragEl = row; row.classList.add('is-dragging'); e.dataTransfer.effectAllowed = 'move'; });
+    row.addEventListener('dragend', async () => {
+      row.classList.remove('is-dragging'); row.draggable = false;
+      const ids = [...list.querySelectorAll('.poprow')].map((r) => r.dataset.id);
+      dragEl = null;
+      await onReorder(ids);
+    });
+  });
+  list.addEventListener('dragover', (e) => {
+    if (!dragEl) return;
+    e.preventDefault();
+    const after = dragAfterElement(list, e.clientY);
+    if (after == null) list.appendChild(dragEl);
+    else list.insertBefore(dragEl, after);
+  });
+}
+function dragAfterElement(list, y) {
+  const els = [...list.querySelectorAll('.poprow:not(.is-dragging)')];
+  let closest = { offset: -Infinity, el: null };
+  els.forEach((child) => {
+    const b = child.getBoundingClientRect();
+    const offset = y - b.top - b.height / 2;
+    if (offset < 0 && offset > closest.offset) closest = { offset, el: child };
+  });
+  return closest.el;
 }
 
 function popupRow(c) {

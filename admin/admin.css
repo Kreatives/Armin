@@ -328,6 +328,20 @@ a.iconbtn { text-decoration: none; }
 .poprow { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
 .poprow__name { font-weight: 600; }
 
+/* Inklapbaar blok */
+.collapse__head { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; background: none; border: none; padding: 0; cursor: pointer; font: inherit; }
+.collapse__chevron { color: var(--muted-2); display: inline-grid; place-items: center; transition: transform .18s; }
+.collapse__chevron svg { width: 18px; height: 18px; }
+.collapse.is-open .collapse__chevron { transform: rotate(180deg); }
+.collapse__body { margin-top: 14px; }
+
+/* Sleepbare rij */
+.poprow--drag { padding-left: 8px; }
+.poprow--drag.is-dragging { opacity: .4; }
+.drag-grip { flex: none; display: inline-grid; place-items: center; width: 24px; height: 28px; color: var(--muted-2); cursor: grab; }
+.drag-grip:active { cursor: grabbing; }
+.drag-grip svg { width: 18px; height: 18px; }
+
 /* ---- Onderbalk ---- */
 .savebar {
   position: fixed; left: 248px; right: 0; bottom: 0; z-index: 40;
