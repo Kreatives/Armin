@@ -196,10 +196,10 @@ function highlightNav() {
 function pageById(id) { return M.pages.find((p) => p.id === id); }
 
 function previewUrl(id) {
-  if (id === 'about') return '../about.html';
-  if (id === 'case') return '../case.html';
-  if (id === 'footer') return '../index.html#contact';
-  return '../index.html';
+  if (id === 'about') return '/about';
+  if (id === 'case') return '/case';
+  if (id === 'footer') return '/#contact';
+  return '/';
 }
 
 function selectTab(id) {
@@ -355,27 +355,54 @@ function makeHrefEditor(field, hrefBaseline) {
   const hkey = field.key + '@href';
   const wrap = document.createElement('div');
   wrap.className = 'href-edit';
+
+  // Weergave (vastgezet): toont waar de link heen gaat + "Link bewerken".
+  const view = document.createElement('div');
+  view.className = 'href-view';
+  const text = document.createElement('span');
+  text.className = 'href-view__text';
+  const editBtn = document.createElement('button');
+  editBtn.type = 'button'; editBtn.className = 'btn btn--ghost btn--sm'; editBtn.textContent = 'Link bewerken';
+  view.append(text, editBtn);
+
+  // Bewerkvorm (verborgen tot "Link bewerken").
+  const edit = document.createElement('div');
+  edit.className = 'href-form'; edit.hidden = true;
   const lab = document.createElement('div');
   lab.className = 'mini__label'; lab.textContent = 'Link (URL)';
   const input = document.createElement('input');
   input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…';
-  const saved = (overrides[hkey] != null && overrides[hkey] !== '') ? overrides[hkey] : hrefBaseline;
-  input.value = saved || '';
-  const current = document.createElement('div');
-  current.className = 'href-current';
-  const drawCurrent = () => {
-    const v = input.value.trim();
-    current.textContent = v ? 'Gaat nu naar: ' + v : (field.hrefHint || 'Geen link ingesteld');
-  };
-  drawCurrent();
+  const row = document.createElement('div'); row.className = 'href-form__row';
+  const resetBtn = document.createElement('button');
+  resetBtn.type = 'button'; resetBtn.className = 'btn btn--ghost btn--sm'; resetBtn.textContent = 'Herstel origineel';
+  const doneBtn = document.createElement('button');
+  doneBtn.type = 'button'; doneBtn.className = 'btn btn--ghost btn--sm'; doneBtn.textContent = 'Klaar';
+  row.append(resetBtn, doneBtn);
+  edit.append(lab, input, row);
+
   const savedVal = () => { const ov = overrides[hkey]; return (ov != null && ov !== '') ? ov : (hrefBaseline || ''); };
-  input.addEventListener('input', () => {
-    drawCurrent();
+  input.value = savedVal();
+
+  const drawView = () => {
+    const v = (input.value || '').trim();
+    text.innerHTML = v
+      ? '🔗 Gaat nu naar: <b>' + v.replace(/</g, '&lt;') + '</b>'
+      : '🔗 ' + (field.hrefHint || 'Geen link ingesteld');
+  };
+  drawView();
+
+  const sync = () => {
+    drawView();
     if (input.value !== savedVal()) pending.set(hkey, { value: input.value, baseline: hrefBaseline || '' });
     else pending.delete(hkey);
     updateSaveBar();
-  });
-  wrap.append(lab, input, current);
+  };
+  input.addEventListener('input', sync);
+  resetBtn.addEventListener('click', () => { input.value = hrefBaseline || ''; sync(); });
+  editBtn.addEventListener('click', () => { edit.hidden = false; view.hidden = true; input.focus(); });
+  doneBtn.addEventListener('click', () => { edit.hidden = true; view.hidden = false; });
+
+  wrap.append(view, edit);
   return wrap;
 }
 
@@ -629,7 +656,7 @@ function caseCard(c, index) {
   renderFlags(c);
   const openLink = document.createElement('a');
   openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
-  openLink.href = '../case.html?case=' + encodeURIComponent(c.slug);
+  openLink.href = '/case?case=' + encodeURIComponent(c.slug);
   openLink.target = '_blank'; openLink.rel = 'noopener';
   openLink.innerHTML = SVG.open;
   openLink.addEventListener('click', (e) => e.stopPropagation());
@@ -1296,7 +1323,7 @@ function popupRow(c) {
   name.className = 'poprow__name'; name.textContent = c.title || c.slug;
   const openLink = document.createElement('a');
   openLink.className = 'iconbtn'; openLink.title = 'Bekijk in nieuw tabblad';
-  openLink.href = '../case.html?case=' + encodeURIComponent(c.slug);
+  openLink.href = '/case?case=' + encodeURIComponent(c.slug);
   openLink.target = '_blank'; openLink.rel = 'noopener'; openLink.innerHTML = SVG.open;
   const spacer = document.createElement('span'); spacer.style.flex = '1';
   const t = toggle('In popup', c.in_popup);

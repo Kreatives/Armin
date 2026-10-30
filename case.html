@@ -34,10 +34,10 @@
         </div>
         <div class="contact__col" data-reveal>
           <p class="contact__label">Pages</p>
-          <a class="contact__link" href="index.html#hero">Home</a>
-          <a class="contact__link" href="index.html#werk">Work</a>
-          <a class="contact__link" href="about.html">About</a>
-          <a class="contact__link" href="index.html#nieuwsbrief">Newsletter</a>
+          <a class="contact__link" href="/#hero">Home</a>
+          <a class="contact__link" href="/#werk">Work</a>
+          <a class="contact__link" href="/about">About</a>
+          <a class="contact__link" href="/#nieuwsbrief">Newsletter</a>
         </div>
         <div class="contact__col" data-reveal>
           <p class="contact__label">Socials</p>
@@ -137,7 +137,7 @@
       : '';
 
     root.innerHTML =
-      '<a class="cd-back" href="index.html#werk">' +
+      '<a class="cd-back" href="/#werk">' +
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
       'Back to work</a>' +
       '<header class="cd-hero">' +
@@ -151,7 +151,7 @@
       '<article class="cd-body">' + g1 + bodyHTML + g2 + '</article>';
 
     nextRoot.innerHTML =
-      '<a class="cd-next__link cd-bleed" href="case.html?case=' + encodeURIComponent(next.slug) + '">' +
+      '<a class="cd-next__link cd-bleed" href="/case?case=' + encodeURIComponent(next.slug) + '">' +
       '<img class="cd-next__bg" src="' + next.thumb + '" alt="" />' +
       '<span class="cd-next__inner">' +
         '<span class="cd-next__eyebrow">' + esc(NEXT_EYEBROW) + '</span>' +

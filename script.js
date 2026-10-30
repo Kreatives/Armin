@@ -542,7 +542,7 @@ function buildCasesRing() {
   const cards = CASES.map(c => {
     const a = document.createElement('a');
     a.className = 'rcase';
-    a.href = `case.html?case=${encodeURIComponent(c.slug)}`;
+    a.href = `/case?case=${encodeURIComponent(c.slug)}`;
     a.setAttribute('aria-label', `${c.title} — ${c.sub}`);
     const media = /\.mp4$/i.test(c.cover.src)
       ? `<video src="${c.cover.src}" poster="${c.thumb}" autoplay muted loop playsinline preload="metadata"></video>`
@@ -658,7 +658,7 @@ function renderDienstCards(i) {
     const pos = layout[idx];
     const el = document.createElement('a');
     el.className = 'diensten__card ' + (item.portrait ? 'diensten__card--portrait' : 'diensten__card--landscape');
-    el.href = `case.html?case=${encodeURIComponent(c.slug)}`;
+    el.href = `/case?case=${encodeURIComponent(c.slug)}`;
     el.style.left = pos.x; el.style.top = pos.y;   // centerpunt; CSS centreert via transform
     el.style.animationDelay = (idx * 0.9) + 's';
 

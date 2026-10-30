@@ -12,8 +12,8 @@ const cfg = window.CMS_CONFIG;
 
 // --- Welke pagina draaien we? -----------------------------------------
 const path = location.pathname;
-const PAGE = path.endsWith('about.html') ? 'about'
-           : path.endsWith('case.html')  ? 'case'
+const PAGE = /about(\.html)?$/.test(path) ? 'about'
+           : /case(\.html)?$/.test(path)  ? 'case'
            : 'home';
 
 // --- Data ophalen met time-out (site breekt nooit op trage/offline DB) --
