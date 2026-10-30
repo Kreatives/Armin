@@ -184,6 +184,7 @@ body {
 .href-view__text b { color: var(--text); font-weight: 600; }
 .href-form { display: flex; flex-direction: column; gap: 6px; }
 .href-form__row { display: flex; gap: 8px; }
+.href-form select.field__input { cursor: pointer; }
 
 /* ---- Icon-knoppen ---- */
 .iconbtn {

@@ -351,12 +351,31 @@ function makeEditor(field, baseline, found) {
 }
 
 // Extra invoer voor de URL (href) van een link-veld, gekoppeld aan de opslaan-balk.
+// Vaste pagina-bestemmingen voor de link-kiezer.
+const PAGE_LINK_OPTIONS = [
+  { label: 'Home', value: '/' },
+  { label: 'Over / About', value: '/about' },
+  { label: 'Werk (homepage)', value: '/#werk' },
+  { label: 'Nieuwsbrief', value: '/#nieuwsbrief' },
+  { label: 'Contact', value: '/#contact' },
+];
+let caseLinkCache = null;
+async function getCaseLinkOptions() {
+  if (caseLinkCache) return caseLinkCache;
+  try {
+    const { data } = await sb.from(CASES).select('slug,title').eq('published', true).order('sort_order', { ascending: true });
+    caseLinkCache = (data || []).map((c) => ({ label: c.title || c.slug, value: '/case?case=' + c.slug }));
+  } catch (_) { caseLinkCache = []; }
+  return caseLinkCache;
+}
+
 function makeHrefEditor(field, hrefBaseline) {
   const hkey = field.key + '@href';
+  const CUSTOM = '__custom__', OVERLAY = '__overlay__';
   const wrap = document.createElement('div');
   wrap.className = 'href-edit';
 
-  // Weergave (vastgezet): toont waar de link heen gaat + "Link bewerken".
+  // Weergave (vastgezet).
   const view = document.createElement('div');
   view.className = 'href-view';
   const text = document.createElement('span');
@@ -365,41 +384,74 @@ function makeHrefEditor(field, hrefBaseline) {
   editBtn.type = 'button'; editBtn.className = 'btn btn--ghost btn--sm'; editBtn.textContent = 'Link bewerken';
   view.append(text, editBtn);
 
-  // Bewerkvorm (verborgen tot "Link bewerken").
+  // Bewerkvorm.
   const edit = document.createElement('div');
   edit.className = 'href-form'; edit.hidden = true;
   const lab = document.createElement('div');
-  lab.className = 'mini__label'; lab.textContent = 'Link (URL)';
+  lab.className = 'mini__label'; lab.textContent = 'Waar gaat deze knop/link heen?';
+  const select = document.createElement('select');
+  select.className = 'field__input';
   const input = document.createElement('input');
-  input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…';
+  input.className = 'field__input'; input.type = 'text'; input.placeholder = 'https://…'; input.hidden = true;
   const row = document.createElement('div'); row.className = 'href-form__row';
   const resetBtn = document.createElement('button');
   resetBtn.type = 'button'; resetBtn.className = 'btn btn--ghost btn--sm'; resetBtn.textContent = 'Herstel origineel';
   const doneBtn = document.createElement('button');
   doneBtn.type = 'button'; doneBtn.className = 'btn btn--ghost btn--sm'; doneBtn.textContent = 'Klaar';
   row.append(resetBtn, doneBtn);
-  edit.append(lab, input, row);
+  edit.append(lab, select, input, row);
 
   const savedVal = () => { const ov = overrides[hkey]; return (ov != null && ov !== '') ? ov : (hrefBaseline || ''); };
-  input.value = savedVal();
 
-  const drawView = () => {
-    const v = (input.value || '').trim();
+  // effectieve waarde toepassen -> view + opslaan-balk
+  const apply = (v) => {
     text.innerHTML = v
-      ? '🔗 Gaat nu naar: <b>' + v.replace(/</g, '&lt;') + '</b>'
+      ? '🔗 Gaat nu naar: <b>' + String(v).replace(/</g, '&lt;') + '</b>'
       : '🔗 ' + (field.hrefHint || 'Geen link ingesteld');
-  };
-  drawView();
-
-  const sync = () => {
-    drawView();
-    if (input.value !== savedVal()) pending.set(hkey, { value: input.value, baseline: hrefBaseline || '' });
+    if (v !== savedVal()) pending.set(hkey, { value: v, baseline: hrefBaseline || '' });
     else pending.delete(hkey);
     updateSaveBar();
   };
-  input.addEventListener('input', sync);
-  resetBtn.addEventListener('click', () => { input.value = hrefBaseline || ''; sync(); });
-  editBtn.addEventListener('click', () => { edit.hidden = false; view.hidden = true; input.focus(); });
+  apply(savedVal());
+
+  let built = false;
+  async function buildSelect() {
+    if (built) return; built = true;
+    const cur = savedVal();
+    const mk = (label, value) => { const o = document.createElement('option'); o.textContent = label; o.value = value; return o; };
+    if (field.hrefHint) select.appendChild(mk('Cases-overlay openen (standaard)', OVERLAY));
+    const gPages = document.createElement('optgroup'); gPages.label = 'Pagina’s';
+    PAGE_LINK_OPTIONS.forEach((o) => gPages.appendChild(mk(o.label, o.value)));
+    select.appendChild(gPages);
+    const cases = await getCaseLinkOptions();
+    if (cases.length) {
+      const gCases = document.createElement('optgroup'); gCases.label = 'Cases';
+      cases.forEach((o) => gCases.appendChild(mk(o.label, o.value)));
+      select.appendChild(gCases);
+    }
+    select.appendChild(mk('Eigen link (URL)…', CUSTOM));
+    // Huidige waarde selecteren.
+    const known = [...select.querySelectorAll('option')].some((o) => o.value === cur && o.value !== CUSTOM && o.value !== OVERLAY);
+    if (cur === '' && field.hrefHint) select.value = OVERLAY;
+    else if (known) select.value = cur;
+    else { select.value = CUSTOM; input.hidden = false; input.value = cur; }
+  }
+
+  select.addEventListener('change', () => {
+    if (select.value === CUSTOM) { input.hidden = false; input.focus(); apply(input.value.trim()); }
+    else if (select.value === OVERLAY) { input.hidden = true; apply(''); }
+    else { input.hidden = true; apply(select.value); }
+  });
+  input.addEventListener('input', () => apply(input.value.trim()));
+  resetBtn.addEventListener('click', () => {
+    const base = hrefBaseline || '';
+    const opt = [...select.querySelectorAll('option')].find((o) => o.value === base);
+    if (base === '' && field.hrefHint) { select.value = OVERLAY; input.hidden = true; }
+    else if (opt) { select.value = base; input.hidden = true; }
+    else { select.value = CUSTOM; input.hidden = false; input.value = base; }
+    apply(base);
+  });
+  editBtn.addEventListener('click', () => { edit.hidden = false; view.hidden = true; buildSelect(); });
   doneBtn.addEventListener('click', () => { edit.hidden = true; view.hidden = false; });
 
   wrap.append(view, edit);
