@@ -522,7 +522,7 @@ body.diensten-open { overflow: hidden; }
 .diensten__bg.is-visible { opacity: 1; }
 .diensten__brandlogo { position: absolute; top: clamp(2rem, 7vh, 5rem); left: 50%; transform: translateX(-50%); z-index: 4; height: clamp(40px, 7vh, 78px); width: auto; max-width: min(80vw, 420px); object-fit: contain; pointer-events: none; opacity: 0; transition: opacity 0.6s var(--ease-out); }
 .diensten__brandlogo.is-visible { opacity: 1; }
-.diensten__bg video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.diensten__bg video, .diensten__bg img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .diensten__bg::after { content: ''; position: absolute; inset: 0; background: rgba(11, 11, 11, 0.72); }
 .diensten__back { position: absolute; left: var(--edge); bottom: clamp(1.5rem, 4vh, 2.5rem); z-index: 4; background: none; border: none; padding: 0; color: var(--paper); font: 400 1rem var(--font-body); cursor: pointer; opacity: 0.8; transition: opacity 0.3s var(--ease-out), color 0.3s var(--ease-out); }
 .diensten__back:hover { opacity: 1; color: var(--orange); }
@@ -655,7 +655,12 @@ a.contact__link:hover { color: var(--orange); }
   .contact__cols { grid-template-columns: 1fr 1fr; row-gap: 2rem; }
   .contact__copy { text-align: left; }
   .case { width: 78vw; }
+  /* De zwevende kaarten zijn een desktop-layout; op mobiel wordt de case-media
+     de zichtbare achtergrond. Lichtere overlay zodat de video echt te zien is,
+     met een donkere boven-/onderrand voor de titel + het menu. */
   .diensten__cards { display: none; }
+  .diensten__bg::after { background: linear-gradient(180deg, rgba(11,11,11,0.5) 0%, rgba(11,11,11,0.32) 42%, rgba(11,11,11,0.78) 100%); }
+  .dienst-item.is-active { text-shadow: 0 2px 16px rgba(0,0,0,0.75); }
   .diensten__menu { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
 }
 

@@ -624,20 +624,37 @@ function landscapeVideoFor(c) {
 }
 
 let dienstBgSrc = null;
-// Zet de 16:9 video van de actieve case als achtergrond (indien beschikbaar).
+// Volledige achtergrond-media van de actieve case: eerst een 16:9 video, anders de
+// cover (video/foto), anders de poster. Op mobiel is dit de zichtbare case-media
+// (de zwevende kaarten zijn daar verborgen).
 function updateDienstBg(i) {
   const bg = document.querySelector('[data-diensten-bg]');
   if (!bg) return;
-  const src = landscapeVideoFor(CASES[i]);
-  if (src === dienstBgSrc) return;                  // zelfde video -> niet opnieuw laden
+  const c = CASES[i] || {};
+  const coverSrc = c.cover && c.cover.src;
+  const src = landscapeVideoFor(c)
+    || coverSrc                                     // cover (video óf foto) als er geen 16:9-video is
+    || c.thumb || null;                             // laatste redmiddel: de poster
+  if (src === dienstBgSrc) return;                  // zelfde bron -> niet opnieuw laden
   dienstBgSrc = src;
   bg.innerHTML = '';
   if (!src) { bg.classList.remove('is-visible'); return; }
-  const v = document.createElement('video');
-  v.src = src; v.muted = true; v.loop = true; v.playsInline = true; v.autoplay = true; v.preload = 'metadata';
-  bg.appendChild(v);
+  if (/\.mp4$/i.test(src)) {
+    const v = document.createElement('video');
+    // iOS: muted + playsinline + autoplay als ATTRIBUUT, anders weigert autoplay.
+    v.muted = true; v.defaultMuted = true; v.setAttribute('muted', '');
+    v.loop = true; v.autoplay = true; v.setAttribute('autoplay', '');
+    v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('webkit-playsinline', '');
+    v.preload = 'auto';
+    if (c.thumb) v.poster = c.thumb;                // nooit zwart voordat de video speelt
+    v.src = src;
+    bg.appendChild(v);
+    if (v.play) v.play().catch(() => {});
+  } else {
+    const im = document.createElement('img'); im.src = src; im.alt = '';
+    bg.appendChild(im);
+  }
   bg.classList.add('is-visible');
-  if (v.play) v.play().catch(() => {});
 }
 
 // Toont het merk-logo van de actieve case op de popup-achtergrond (indien aanwezig).
@@ -652,8 +669,11 @@ function updateDienstLogo(i) {
 function renderDienstCards(i) {
   const cards = document.querySelector('[data-diensten-cards]');
   if (!cards) return;
-  const c = CASES[i];
   cards.innerHTML = '';
+  // Op mobiel geen kaart-video's bouwen: ook verborgen video's tellen mee voor de
+  // iOS-decoderlimiet en zouden de ene zichtbare achtergrondvideo blokkeren.
+  if (isMobile()) return;
+  const c = CASES[i];
   if (!c) return;
   const media = cardMediaFor(c);
   const three = DCARD_SETS[i % DCARD_SETS.length] || DCARD_SETS[0];
@@ -752,12 +772,18 @@ function setDienst(i, instant) {
   });
 }
 
+function stepDienst(dir) {
+  if (!CASES.length) return;
+  setDienst((dienstIndex + dir + CASES.length) % CASES.length);
+}
 function openDiensten() {
   const ov = dienstOverlay();
   ov.classList.add('is-open'); ov.setAttribute('aria-hidden', 'false');
   document.body.classList.add('diensten-open');
   setDienst(dienstIndex, true);       // reel-hoogte klopt nu pas (was hidden)
   ov.addEventListener('wheel', onDienstWheel, { passive: false });
+  ov.addEventListener('touchstart', onDienstTouchStart, { passive: true });
+  ov.addEventListener('touchend', onDienstTouchEnd, { passive: true });
   ov.querySelectorAll('video').forEach(v => v.play && v.play().catch(() => {}));
 }
 function closeDiensten() {
@@ -765,13 +791,23 @@ function closeDiensten() {
   ov.classList.remove('is-open'); ov.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('diensten-open');
   ov.removeEventListener('wheel', onDienstWheel);
+  ov.removeEventListener('touchstart', onDienstTouchStart);
+  ov.removeEventListener('touchend', onDienstTouchEnd);
 }
 function onDienstWheel(e) {
   e.preventDefault();
   if (dienstWheelLock || Math.abs(e.deltaY) < 8) return;
   dienstWheelLock = true; setTimeout(() => { dienstWheelLock = false; }, 750);
-  const dir = e.deltaY > 0 ? 1 : -1;
-  setDienst((dienstIndex + dir + CASES.length) % CASES.length);
+  stepDienst(e.deltaY > 0 ? 1 : -1);
+}
+// Mobiel: verticaal vegen bladert door de cases (de wheel-interactie van desktop).
+let dienstTouchY = null;
+function onDienstTouchStart(e) { dienstTouchY = e.touches[0].clientY; }
+function onDienstTouchEnd(e) {
+  if (dienstTouchY === null) return;
+  const dy = e.changedTouches[0].clientY - dienstTouchY;
+  dienstTouchY = null;
+  if (Math.abs(dy) > 45) stepDienst(dy < 0 ? 1 : -1);   // omhoog vegen -> volgende case
 }
 
 /* ---- Scroll-highlight (tekst vult in bij scrollen) ------ */
@@ -836,11 +872,15 @@ function init() {
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   Promise.all(services.map(s => s.img.decode().catch(() => {}))).then(buildHitMaps);
 
-  let ringResizeT;
+  let ringResizeT, lastW = window.innerWidth;
   window.addEventListener('resize', () => {
     fitText();
     resizeCanvas();
     buildHitMaps();
+    // Alleen bij een breedte-wijziging (orientatie) de ring herbouwen en ScrollTrigger
+    // verversen. Op mobiel verandert de hoogte constant (adresbalk) -> anders pin-sprongen.
+    if (window.innerWidth === lastW) return;
+    lastW = window.innerWidth;
     clearTimeout(ringResizeT);
     ringResizeT = setTimeout(() => { buildCasesRing(); }, 200);
     if (window.ScrollTrigger) ScrollTrigger.refresh();
@@ -854,6 +894,7 @@ function init() {
   }
 
   gsap.registerPlugin(ScrollTrigger);
+  ScrollTrigger.config({ ignoreMobileResize: true });   // mobiele adresbalk niet als resize behandelen
 
   // Pauzeer de object-floats zodra de hero uit beeld is -> geen werk tijdens het lezen.
   const heroEl = document.querySelector('.hero');
@@ -864,23 +905,10 @@ function init() {
     }, { threshold: 0 }).observe(heroEl);
   }
 
-  // MOBIEL: lichte, statische hero (geen pin, geen scroll-scrub, geen WebGL-curl)
-  // -> soepel scrollen + geen grote lege ruimte na de hero. Eén frame volstaat.
-  if (isMobile()) {
-    const lastPath = SEQUENCE.path + String(SEQUENCE.count).padStart(SEQUENCE.pad, '0') + SEQUENCE.ext;
-    const readyM = preload([lastPath], p => { loaderFill.style.width = (p * 100) + '%'; })
-      .then(imgs => {
-        frames = imgs;
-        resizeCanvas();
-        drawFrame(0, true);
-        loaderEl.classList.add('is-done');
-        return fontsReady.then(() => { showHero(); showEndState(); setupReveals(); setupWork(); setupHighlight(); ScrollTrigger.refresh(); });
-      });
-    runPreloader(readyM);
-    return;
-  }
-
-  const paths = buildPaths(1);
+  // Dezelfde scroll-animatie op desktop én mobiel (sequence-scrub -> WebGL-curl -> objecten).
+  // Op mobiel de helft van de frames: lichter in geheugen, nog steeds vloeiend.
+  const step = isMobile() ? 2 : 1;
+  const paths = buildPaths(step);
   const ready = preload(paths, p => { loaderFill.style.width = (p * 100) + '%'; })
     .then(imgs => {
       frames = imgs;
