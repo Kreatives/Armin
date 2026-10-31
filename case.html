@@ -11,8 +11,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="style.css?v=m3" />
-  <link rel="stylesheet" href="case.css?v=m2" />
+  <link rel="stylesheet" href="style.css?v=m4" />
+  <link rel="stylesheet" href="case.css?v=m4" />
 </head>
 <body class="case-page">
   <div class="bg" aria-hidden="true"></div>
@@ -109,10 +109,11 @@
 
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function isVideo(src) { return /\.mp4$/i.test(src); }
+    var isMobile = window.matchMedia('(max-width: 767px)').matches;
     function mediaTag(src, cls) {
-      return isVideo(src)
-        ? '<video class="' + cls + '" src="' + src + '" autoplay muted loop playsinline preload="metadata"></video>'
-        : '<img class="' + cls + '" src="' + src + '" alt="" loading="lazy" />';
+      if (!isVideo(src)) return '<img class="' + cls + '" src="' + src + '" alt="" loading="lazy" />';
+      // poster zodat iOS een frame toont als autoplay (bv. in low power mode) geblokkeerd is
+      return '<video class="' + cls + '" src="' + src + '" poster="' + esc(c.thumb || '') + '" autoplay muted loop playsinline preload="metadata"></video>';
     }
 
     /* Media gegroepeerd per oriëntatie -> nette grids, aspect-ratio behouden. */

@@ -730,8 +730,8 @@ a.contact__link:hover { color: var(--orange); }
   .work__arrows { margin-top: clamp(1rem, 3vh, 1.75rem); }
   /* === cases-overlay (diensten) volledig passend maken === */
   .diensten { --reel-item: 13vh; padding: clamp(4rem, 10vh, 6rem) 0 clamp(6rem, 14vh, 7rem); }
-  /* filter-knoppen: los in een grid (geen card-achtergrond), gecentreerd, binnen het scherm */
-  .diensten__menu { width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; border: none; background: transparent; padding: 0; gap: 0.5rem; }
+  /* filter-knoppen: los (geen card-achtergrond), gecentreerd, helemaal onderaan */
+  .diensten__menu { position: absolute; left: 50%; bottom: clamp(1.5rem, 5vh, 3rem); transform: translateX(-50%); width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; border: none; background: transparent; padding: 0; gap: 0.5rem; }
   .diensten__menu button { flex: 0 1 auto; padding: 0.55rem 0.9rem; font-size: 0.8rem; white-space: nowrap; }
   /* case-titels (odometer): klein genoeg om binnen het scherm te passen */
   .diensten__reel { padding: 0 var(--edge); }

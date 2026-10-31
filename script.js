@@ -549,9 +549,11 @@ function buildCasesRing() {
     a.className = 'rcase';
     a.href = `/case?case=${encodeURIComponent(c.slug)}`;
     a.setAttribute('aria-label', `${c.title} — ${c.sub}`);
-    const media = /\.mp4$/i.test(c.cover.src)
+    // iOS kan niet veel autoplay-video's tegelijk aan -> op mobiel poster-afbeeldingen.
+    const coverImg = /\.(webp|jpe?g|png)$/i.test(c.cover.src) ? c.cover.src : c.thumb;
+    const media = (!isMobile() && /\.mp4$/i.test(c.cover.src))
       ? `<video src="${c.cover.src}" poster="${c.thumb}" autoplay muted loop playsinline preload="metadata"></video>`
-      : `<img src="${c.thumb}" alt="" loading="lazy" />`;
+      : `<img src="${coverImg}" alt="" loading="lazy" />`;
     a.innerHTML = `<div class="rcase__media">${media}<span class="rcase__brand">${c.brand}</span></div><span class="rcase__sub">${c.sub}</span>`;
     return a;
   });
