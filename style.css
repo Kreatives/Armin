@@ -430,7 +430,7 @@ body {
   /* De zwevende dienst-pill en de dienst-pijlen zijn op touch nutteloos -> weg */
   .cursor-pill { display: none !important; }
   .hero-arrows, .head-nav { display: none !important; }
-  .hero__body { font-size: 1rem; }
+  .hero__body { font-size: 1rem; bottom: clamp(3.5rem, 9vh, 5rem); }
 }
 
 /* 11. Reduced motion — eindstaat, geen animatie ----------- */
@@ -516,7 +516,7 @@ body {
 
 /* --- Diensten (fullscreen overlay via 'Bekijk alle cases') --- */
 body.diensten-open { overflow: hidden; }
-.diensten { position: fixed; inset: 0; z-index: 200; overflow: hidden; display: none; grid-template-rows: 1fr auto; align-items: center; padding: clamp(3rem, 8vh, 6rem) 0 clamp(4.5rem, 10vh, 6rem); background: var(--dark); color: var(--paper); --reel-item: 19vh; }
+.diensten { position: fixed; inset: 0; height: 100dvh; z-index: 200; overflow: hidden; display: none; grid-template-rows: 1fr auto; align-items: center; padding: clamp(3rem, 8vh, 6rem) 0 clamp(4.5rem, 10vh, 6rem); background: var(--dark); color: var(--paper); --reel-item: 19vh; }
 .diensten.is-open { display: grid; }
 .diensten__bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; opacity: 0; transition: opacity 0.7s var(--ease-out); pointer-events: none; }
 .diensten__bg.is-visible { opacity: 1; }
@@ -736,11 +736,11 @@ a.contact__link:hover { color: var(--orange); }
   /* === cases-overlay (diensten) volledig passend maken === */
   .diensten { --reel-item: 13vh; padding: clamp(4rem, 10vh, 6rem) 0 clamp(6rem, 14vh, 7rem); }
   /* filter-knoppen: los (geen card-achtergrond), gecentreerd, helemaal onderaan */
-  .diensten__menu { position: absolute; left: 50%; bottom: clamp(1.5rem, 5vh, 3rem); transform: translateX(-50%); width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; border: none; background: transparent; padding: 0; gap: 0.5rem; }
+  .diensten__menu { position: absolute; left: 50%; bottom: max(0.75rem, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; border: none; background: transparent; padding: 0; gap: 0.5rem; }
   .diensten__menu button { flex: 0 1 auto; padding: 0.55rem 0.9rem; font-size: 0.8rem; white-space: nowrap; }
   /* case-titels (odometer): klein genoeg om binnen het scherm te passen */
   .diensten__reel { padding: 0 var(--edge); }
-  .dienst-item { font-size: clamp(1.1rem, 6vw, 2rem) !important; padding: 0 var(--edge); text-align: center; }
+  .dienst-item { font-size: clamp(1.75rem, 9vw, 3.25rem) !important; padding: 0 2vw; text-align: center; }
   .diensten__brandlogo { height: clamp(32px, 6vh, 56px); }
   /* scroll-hint rechtsonder past niet -> verbergen; terug-knop naar boven */
   .diensten__hint { display: none; }
