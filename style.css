@@ -420,15 +420,16 @@ body {
   .hero__frame { top: clamp(1rem, 3vh, 2rem); }
   .hero__title { line-height: 0.86; }
 
-  /* Persoon: hoogte-gebaseerd en horizontaal gecentreerd (16:9 bron loopt links/rechts buiten beeld) */
+  /* Persoon: hoogte-gebaseerd, horizontaal gecentreerd, en tegen de onderkant van de sectie */
   .stage__canvas, .head, .services {
-    height: 66%;
+    height: 82%;
     width: auto;
     aspect-ratio: var(--head-aspect);
-    bottom: 13%;
+    bottom: 0;
   }
-  .head-nav { display: flex; }
-  .cursor-pill { font-size: 14px; padding: 10px 18px; }
+  /* De zwevende dienst-pill en de dienst-pijlen zijn op touch nutteloos -> weg */
+  .cursor-pill { display: none !important; }
+  .hero-arrows, .head-nav { display: none !important; }
   .hero__body { font-size: 1rem; }
 }
 
@@ -726,13 +727,18 @@ a.contact__link:hover { color: var(--orange); }
   /* cases-ring compacter zodat er geen grote lege ruimte boven de kaart staat */
   .ring-stage, .work__ring { height: clamp(300px, 46vh, 400px); }
   .work__arrows { margin-top: clamp(1rem, 3vh, 1.75rem); }
-  /* cases-overlay: filter-knoppen in een grid i.p.v. horizontale scroll */
-  .diensten { --reel-item: 15vh; }
-  .diensten__menu { flex-wrap: wrap; justify-content: center; max-width: calc(100% - 2 * var(--edge)); overflow: visible; }
-  .diensten__menu button { flex: 0 0 auto; padding: 0.6rem 0.85rem; font-size: 0.82rem; white-space: nowrap; }
-  /* case-titels (odometer) binnen het scherm, gecentreerd */
-  .dienst-item { font-size: clamp(1.4rem, 8vw, 3rem); padding: 0 var(--edge); text-align: center; }
-  .diensten__hint { font-size: 0.72rem; }
+  /* === cases-overlay (diensten) volledig passend maken === */
+  .diensten { --reel-item: 13vh; padding: clamp(4rem, 10vh, 6rem) 0 clamp(6rem, 14vh, 7rem); }
+  /* filter-knoppen: echt in een grid (wrappen), gecentreerd, binnen het scherm */
+  .diensten__menu { width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; }
+  .diensten__menu button { flex: 0 1 auto; padding: 0.55rem 0.8rem; font-size: 0.8rem; white-space: nowrap; }
+  /* case-titels (odometer): klein genoeg om binnen het scherm te passen */
+  .diensten__reel { padding: 0 var(--edge); }
+  .dienst-item { font-size: clamp(1.1rem, 6vw, 2rem) !important; padding: 0 var(--edge); text-align: center; }
+  .diensten__brandlogo { height: clamp(32px, 6vh, 56px); }
+  /* scroll-hint rechtsonder past niet naast de terug-knop -> verbergen */
+  .diensten__hint { display: none; }
+  .diensten__back { font-size: 0.9rem; }
 }
 @media (max-width: 440px) {
   .contact__cols { grid-template-columns: 1fr; }

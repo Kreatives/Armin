@@ -154,9 +154,9 @@ function loadScript(src) {
 }
 
 async function startPage() {
-  if (PAGE === 'about') return loadScript('about.js?v=8');
+  if (PAGE === 'about') return loadScript('about.js?v=9');
   if (PAGE === 'case')  return typeof window.renderCase === 'function' ? window.renderCase() : null;
-  return loadScript('script.js?v=m1'); // home
+  return loadScript('script.js?v=m2'); // home
 }
 
 // --- Orkestratie -------------------------------------------------------

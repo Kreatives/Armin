@@ -272,11 +272,15 @@ main > section:not(.ab-hero) { position: relative; z-index: 1; background: #0101
   .ab-story__year { font-size: 1.15rem; }
   /* timeline-lijn niet nodig op smalle schermen */
   .ab-story__track::before { display: none; }
+  /* About-hero: niet sticky op mobiel -> scrollt normaal, geen overlap/afgesneden tekst */
+  .ab-hero { position: relative; height: auto; min-height: auto; }
   /* Featured & interviews: intro ONDER de kop, pijlen eronder, hogere kaart */
   .ab-feat__head { flex-direction: column; align-items: flex-start; gap: 0.6rem; }
   .ab-feat__arrows { justify-content: flex-start; margin-top: 0.25rem; }
-  .ab-feat__slide { width: 88vw; height: clamp(460px, 76vh, 640px); }
-  .ab-feat__content { padding: 1.4rem; }
+  /* kaarten niet tegen de schermrand + hoog genoeg zodat alles past */
+  .ab-feat__track { padding-inline: var(--edge); }
+  .ab-feat__slide { width: 86vw; height: auto; min-height: clamp(420px, 70vh, 560px); align-items: stretch; }
+  .ab-feat__content { padding: 1.4rem; margin-top: auto; }
   .ab-feat__outlet { font-size: clamp(1.5rem, 7vw, 2.4rem); }
   .ab-feat__desc { font-size: 0.95rem; margin-bottom: 1rem; }
 }

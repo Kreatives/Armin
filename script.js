@@ -484,8 +484,10 @@ function createRing(stage, cardEls, opts) {
   stage.innerHTML = '';
   stage.appendChild(ring);
 
-  const state = { rot: 0, vel: reducedMotion ? 0 : (opts.introSpin || 0), target: null, last: NaN, hover: false, dragging: false, lastX: 0, moved: 0 };
-  const auto = reducedMotion ? 0 : (opts.autoSpin || 0);
+  // Op mobiel: geen intro-/auto-spin en geen sleep -> rustig, alleen de pijlen.
+  const noSpin = reducedMotion || isMobile();
+  const state = { rot: 0, vel: noSpin ? 0 : (opts.introSpin || 0), target: null, last: NaN, hover: false, dragging: false, lastX: 0, moved: 0 };
+  const auto = noSpin ? 0 : (opts.autoSpin || 0);
   const listeners = [];
   const on = (t, ev, fn, o) => { t.addEventListener(ev, fn, o); listeners.push([t, ev, fn, o]); };
 
@@ -515,14 +517,14 @@ function createRing(stage, cardEls, opts) {
 
   const getX = e => (e.touches ? e.touches[0].clientX : e.clientX);
   on(stage, 'mousedown', e => { state.dragging = true; state.target = null; state.moved = 0; state.lastX = getX(e); state.vel = 0; stage.classList.add('is-grabbing'); });
-  on(stage, 'touchstart', e => { state.dragging = true; state.target = null; state.moved = 0; state.lastX = getX(e); state.vel = 0; }, { passive: true });
+  on(stage, 'touchstart', e => { if (isMobile()) return; state.dragging = true; state.target = null; state.moved = 0; state.lastX = getX(e); state.vel = 0; }, { passive: true });
   const move = e => {
     if (!state.dragging) return;
     const x = getX(e), dx = x - state.lastX, d = dx * 0.22;
     state.lastX = x; state.moved += Math.abs(dx); state.rot += d; state.vel = d;
   };
   on(window, 'mousemove', move);
-  on(window, 'touchmove', move, { passive: true });
+  on(window, 'touchmove', e => { if (isMobile()) return; move(e); }, { passive: true });
   const up = () => { if (!state.dragging) return; state.dragging = false; stage.classList.remove('is-grabbing'); };
   on(window, 'mouseup', up);
   on(window, 'touchend', up);
