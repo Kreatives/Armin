@@ -708,10 +708,11 @@ a.contact__link:hover { color: var(--orange); }
   .dock__links { gap: 4px; }
   .dock__link { padding: 11px 12px; font-size: 0.82rem; border-radius: 11px; }
   .dock__cta { padding: 11px 14px; font-size: 0.82rem; border-radius: 11px; }
+  /* Newsletter weg op klein scherm, About blijft in het menu */
   .dock__link[data-sec="nieuwsbrief"] { display: none; }
 }
-@media (max-width: 460px) {
-  .dock__link[data-sec="about"] { display: none; }
+@media (max-width: 420px) {
+  .dock__link { padding: 10px 9px; font-size: 0.78rem; }
 }
 
 /* =========================================================
@@ -729,16 +730,16 @@ a.contact__link:hover { color: var(--orange); }
   .work__arrows { margin-top: clamp(1rem, 3vh, 1.75rem); }
   /* === cases-overlay (diensten) volledig passend maken === */
   .diensten { --reel-item: 13vh; padding: clamp(4rem, 10vh, 6rem) 0 clamp(6rem, 14vh, 7rem); }
-  /* filter-knoppen: echt in een grid (wrappen), gecentreerd, binnen het scherm */
-  .diensten__menu { width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; }
-  .diensten__menu button { flex: 0 1 auto; padding: 0.55rem 0.8rem; font-size: 0.8rem; white-space: nowrap; }
+  /* filter-knoppen: los in een grid (geen card-achtergrond), gecentreerd, binnen het scherm */
+  .diensten__menu { width: 100%; max-width: calc(100% - 2 * var(--edge)); flex-wrap: wrap; justify-content: center; overflow: visible; border: none; background: transparent; padding: 0; gap: 0.5rem; }
+  .diensten__menu button { flex: 0 1 auto; padding: 0.55rem 0.9rem; font-size: 0.8rem; white-space: nowrap; }
   /* case-titels (odometer): klein genoeg om binnen het scherm te passen */
   .diensten__reel { padding: 0 var(--edge); }
   .dienst-item { font-size: clamp(1.1rem, 6vw, 2rem) !important; padding: 0 var(--edge); text-align: center; }
   .diensten__brandlogo { height: clamp(32px, 6vh, 56px); }
-  /* scroll-hint rechtsonder past niet naast de terug-knop -> verbergen */
+  /* scroll-hint rechtsonder past niet -> verbergen; terug-knop naar boven */
   .diensten__hint { display: none; }
-  .diensten__back { font-size: 0.9rem; }
+  .diensten__back { top: clamp(1rem, 3vh, 1.75rem); bottom: auto; font-size: 0.9rem; }
 }
 @media (max-width: 440px) {
   .contact__cols { grid-template-columns: 1fr; }
