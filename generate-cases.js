@@ -20,23 +20,24 @@ const FALLBACK_COVER = 'assets/video/showreel.mp4';
 
 // Volgorde op de homepage + alle metadata. Media wordt automatisch aangevuld.
 const META = [
+  // slug = publieke/CMS-slug (volgt de content-brief). mediaSlug = mediamap op schijf
+  // als die afwijkt. extraMedia = extra mediamappen die mee in deze case komen.
   { slug: 'kick-t-met', brand: "KICK 'T MET", title: "Kick 't Met", sub: 'Ziggo Sport talkshow',
-    tags: ['Presentatie', 'Format'], client: 'Ziggo Sport', date: '2024', role: 'Host & Concept', services: 'Format & IP' },
-  { slug: 'kick-t-met-on-tour', brand: "KICK 'T MET ON TOUR", title: "Kick 't Met — On Tour", sub: 'Ziggo Sport op locatie',
-    tags: ['Presentatie', 'Football'], client: 'Ziggo Sport', date: '2024', role: 'Host & Concept', services: 'Format & IP' },
+    tags: ['Presentatie', 'Format'], client: 'Ziggo Sport', date: '2024', role: 'Host & Concept', services: 'Format & IP',
+    extraMedia: ['kick-t-met-on-tour'] },
   { slug: 'kick-t-net', brand: "KICK 'T NET", title: "Kick 't Net", sub: 'Voetbalinterviews',
     tags: ['Host', 'Content'], client: 'Ziggo Sport', date: '2024', role: 'Host & Concept', services: 'Format & IP' },
   { slug: 'convo', brand: 'CONVO', title: 'CONVO', sub: 'Gesprekken over cultuur',
     tags: ['Host', 'Format'], client: 'CONVO', date: '2024', role: 'Founder, Creator & Host', services: 'Format & IP' },
   { slug: 'rabobank', brand: 'RABOBANK', title: 'Rabobank', sub: 'Merkcampagne',
     tags: ['Content', 'Video'], client: 'Rabobank', date: '2024', role: 'Creative & Host', services: 'Creative Direction & Production' },
-  { slug: 'complex-puma', brand: 'COMPLEX × PUMA', title: 'Complex × Puma', sub: 'Merkcampagne',
+  { slug: 'puma-complex-next', mediaSlug: 'complex-puma', brand: 'COMPLEX × PUMA', title: 'Complex × Puma', sub: 'Merkcampagne',
     tags: ['Creative Direction', 'Video'], client: 'Puma', date: '2023', role: 'Creative Director', services: 'Creative Direction & Production' },
   { slug: 'red-bull-rap-champs', brand: 'RED BULL', title: 'Red Bull Rap Champs', sub: 'Hiphop-competitie',
     tags: ['Host', 'Content'], client: 'Red Bull', date: '2023', role: 'Host & Concept', services: 'Format & IP' },
   { slug: 'hot-ones', brand: 'HOT ONES', title: 'Hot Ones — KFC × Sprite', sub: 'Branded format',
     tags: ['Host', 'Format'], client: 'KFC × Sprite', date: '2024', role: 'Host', services: 'Creative Direction & Production' },
-  { slug: 'g-shock', brand: 'G-SHOCK', title: 'Sneaker Shopping', sub: 'G-Shock branded serie',
+  { slug: 'complex-sneaker-shopping', mediaSlug: 'g-shock', brand: 'G-SHOCK', title: 'Sneaker Shopping', sub: 'G-Shock branded serie',
     tags: ['Host', 'Content'], client: 'G-Shock', date: '2023', role: 'Host & Concept', services: 'Format & IP' },
   { slug: 'puma-creative-camp', brand: 'PUMA', title: 'Puma Creative Camp', sub: 'Community-event',
     tags: ['Host', 'Direction'], client: 'Puma', date: '2023', role: 'Host & Curator', services: 'Partnerships & Cultural Connections' },
@@ -44,13 +45,13 @@ const META = [
     tags: ['Creative Direction', 'Video'], client: 'Reebok', date: '2022', role: 'Creative Director', services: 'Creative Direction & Production' },
   { slug: 'zalando', brand: 'ZALANDO', title: 'Zalando', sub: 'Fashion & cultuur',
     tags: ['Host', 'Content'], client: 'Zalando', date: '2024', role: 'Host', services: 'Partnerships & Cultural Connections' },
-  { slug: 'adidas', brand: 'ADIDAS', title: 'adidas', sub: 'Social-serie',
+  { slug: 'adidas-x-speedportal', mediaSlug: 'adidas', brand: 'ADIDAS', title: 'adidas', sub: 'Social-serie',
     tags: ['Content', 'Social'], client: 'adidas', date: '2024', role: 'Creative & Host', services: 'Creative Direction & Production' },
   { slug: 'telfaz11', brand: 'TELFAZ11', title: 'Telfaz11', sub: 'Content-samenwerking',
     tags: ['Format', 'Video'], client: 'Telfaz11', date: '2024', role: 'Creative Consultant', services: 'Football & Culture Consultancy' },
-  { slug: 'afcon', brand: 'AFCON', title: 'AFCON', sub: 'Voetbaltoernooi-content',
+  { slug: 'afcon-trophy-tour', mediaSlug: 'afcon', brand: 'AFCON', title: 'AFCON', sub: 'Voetbaltoernooi-content',
     tags: ['Host', 'Football'], client: 'Complex', date: '2024', role: 'Host & Analyst', services: 'Football & Culture Consultancy' },
-  { slug: 'fifa', brand: 'FIFA', title: 'FIFA', sub: 'Gaming & voetbal',
+  { slug: 'fifa-research', mediaSlug: 'fifa', brand: 'FIFA', title: 'FIFA', sub: 'Gaming & voetbal',
     tags: ['Host', 'Content'], client: 'FIFA', date: '2023', role: 'Host', services: 'Football & Culture Consultancy' },
 ];
 
@@ -78,15 +79,23 @@ function thumbFor(slug, cover) {
 }
 
 const out = META.map(m => {
-  const { images, videos } = mediaFor(m.slug);
+  // De slug (publiek/CMS) kan afwijken van de mediamap op schijf: mediaSlug wijst naar
+  // de map met de bestanden. extraMedia voegt media uit extra mappen toe (bv. On Tour
+  // onder Kick 't Met). Zo blijft de media ongewijzigd terwijl de slug de brief volgt.
+  const mSlug = m.mediaSlug || m.slug;
+  const primary = mediaFor(mSlug);
+  const extra = (m.extraMedia || []).map(mediaFor);
+  const videos = [...primary.videos, ...extra.flatMap(e => e.videos)];
+  const images = [...primary.images, ...extra.flatMap(e => e.images)];
   const ordered = [...videos, ...images];            // VIDEO eerst -> cover speelt af op de kaart
   const coverSrc = ordered[0] || FALLBACK_COVER;     // eerste media = cover
   const cover = orient(coverSrc);                    // {src, portrait}
   const media = ordered.slice(1).map(orient);        // rest = body-media, met oriëntatie
-  const thumb = thumbFor(m.slug, coverSrc);          // poster/afbeelding voor before-play
-  const logoAbs = path.join(CASES_DIR, m.slug, 'logo.png');
-  const logo = fs.existsSync(logoAbs) ? `assets/cases/${m.slug}/logo.png` : null;  // merk-logo (optioneel)
-  return { ...m, summary: SUMMARY, cover, thumb, logo, media };
+  const thumb = thumbFor(mSlug, coverSrc);           // poster/afbeelding voor before-play
+  const logoAbs = path.join(CASES_DIR, mSlug, 'logo.png');
+  const logo = fs.existsSync(logoAbs) ? `assets/cases/${mSlug}/logo.png` : null;  // merk-logo (optioneel)
+  const { mediaSlug, extraMedia, ...meta } = m;      // interne velden niet mee serialiseren
+  return { ...meta, summary: SUMMARY, cover, thumb, logo, media };
 });
 
 const banner = '/* AUTO-GEGENEREERD door generate-cases.js — niet handmatig bewerken. */\n';

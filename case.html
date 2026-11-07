@@ -110,10 +110,18 @@
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function isVideo(src) { return /\.mp4$/i.test(src); }
     var isMobile = window.matchMedia('(max-width: 767px)').matches;
-    function mediaTag(src, cls) {
+    function mediaTag(src, cls, eager) {
       if (!isVideo(src)) return '<img class="' + cls + '" src="' + src + '" alt="" loading="lazy" />';
-      // poster zodat iOS een frame toont als autoplay (bv. in low power mode) geblokkeerd is
-      return '<video class="' + cls + '" src="' + src + '" poster="' + esc(c.thumb || '') + '" autoplay muted loop playsinline preload="metadata"></video>';
+      // poster zodat iOS/een trage verbinding meteen een frame toont (autoplay kan
+      // geblokkeerd zijn of de video laadt nog).
+      var poster = esc(c.thumb || '');
+      // Cover laadt direct. Galerij-video's lazy: anders vechten 4+ zware video's
+      // tegelijk om bandbreedte en speelt alles pas na ~10s. De IntersectionObserver
+      // onderaan renderCase start ze zodra ze in beeld komen.
+      if (eager) {
+        return '<video class="' + cls + '" src="' + src + '" poster="' + poster + '" autoplay muted loop playsinline preload="metadata"></video>';
+      }
+      return '<video class="' + cls + '" data-lazy-video src="' + src + '" poster="' + poster + '" muted loop playsinline preload="none"></video>';
     }
 
     /* Media gegroepeerd per oriëntatie -> nette grids, aspect-ratio behouden. */
@@ -130,7 +138,7 @@
     }
 
     var coverFig = '<figure class="cd-cover ' + (c.cover.portrait ? 'cd-cover--portrait' : 'cd-cover--landscape') + '" data-reveal>' +
-      mediaTag(c.cover.src, 'cd-cover__media') +
+      mediaTag(c.cover.src, 'cd-cover__media', true) +
       '<figcaption class="cd-caption">' + esc(c.title) + '</figcaption></figure>';
 
     var blocks = buildBlocks(c.media || []);
@@ -180,6 +188,25 @@
         '<span class="cd-next__title">' + esc(next.title) + '</span>' +
       '</span>' +
       '<span class="cd-next__arrow" aria-hidden="true">→</span></a>';
+
+    /* Galerij-video's pas laden + afspelen als ze in beeld komen. Zo vechten niet
+       meerdere zware (ongecachete) video's tegelijk om bandbreedte, en speelt de
+       cover meteen. */
+    var lazyVids = root.querySelectorAll('video[data-lazy-video]');
+    if (lazyVids.length && 'IntersectionObserver' in window) {
+      var vio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          var v = en.target;
+          if (en.isIntersecting) {
+            if (v.preload === 'none') v.preload = 'auto';
+            var p = v.play(); if (p && p.catch) p.catch(function () {});
+          } else if (!v.paused) { v.pause(); }
+        });
+      }, { rootMargin: '300px 0px' });
+      lazyVids.forEach(function (v) { vio.observe(v); });
+    } else {
+      lazyVids.forEach(function (v) { v.preload = 'auto'; var p = v.play && v.play(); if (p && p.catch) p.catch(function () {}); });
+    }
 
     /* Rustige reveals (bewezen patroon uit script.js) */
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && window.gsap) {

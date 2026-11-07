@@ -559,7 +559,7 @@ function buildCasesRing() {
     const media = (!isMobile() && /\.mp4$/i.test(c.cover.src))
       ? `<video src="${c.cover.src}" poster="${poster}" autoplay muted loop playsinline preload="metadata"></video>`
       : `<img src="${poster}" alt="" loading="lazy" />`;
-    a.innerHTML = `<div class="rcase__media">${media}<span class="rcase__brand">${c.brand}</span></div><span class="rcase__sub">${c.sub}</span>`;
+    a.innerHTML = `<div class="rcase__media">${media}<span class="rcase__brand">${c.brand}</span></div>`;
     return a;
   });
   casesRing = createRing(stage, cards, { cardW, autoSpin: 0, introSpin: 3, spread: 1.07 });

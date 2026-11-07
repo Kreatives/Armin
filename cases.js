@@ -24,6 +24,22 @@ window.CASES = [
       {
         "src": "assets/cases/kick-t-met/02-timber-brothers.mp4",
         "portrait": false
+      },
+      {
+        "src": "assets/cases/kick-t-met-on-tour/01-camavinga.mp4",
+        "portrait": false
+      },
+      {
+        "src": "assets/cases/kick-t-met-on-tour/02-declan-rice.mp4",
+        "portrait": false
+      },
+      {
+        "src": "assets/cases/kick-t-met-on-tour/03-jay-z.mp4",
+        "portrait": false
+      },
+      {
+        "src": "assets/cases/kick-t-met-on-tour/04-rudiger.mp4",
+        "portrait": false
       }
     ]
   },
@@ -168,7 +184,7 @@ window.CASES = [
     ]
   },
   {
-    "slug": "complex-puma",
+    "slug": "puma-complex-next",
     "brand": "COMPLEX × PUMA",
     "title": "Complex × Puma",
     "sub": "Merkcampagne",
@@ -281,7 +297,7 @@ window.CASES = [
     ]
   },
   {
-    "slug": "g-shock",
+    "slug": "complex-sneaker-shopping",
     "brand": "G-SHOCK",
     "title": "Sneaker Shopping",
     "sub": "G-Shock branded serie",
@@ -437,7 +453,7 @@ window.CASES = [
     ]
   },
   {
-    "slug": "adidas",
+    "slug": "adidas-x-speedportal",
     "brand": "ADIDAS",
     "title": "adidas",
     "sub": "Social-serie",
@@ -515,7 +531,7 @@ window.CASES = [
     ]
   },
   {
-    "slug": "afcon",
+    "slug": "afcon-trophy-tour",
     "brand": "AFCON",
     "title": "AFCON",
     "sub": "Voetbaltoernooi-content",
@@ -542,7 +558,7 @@ window.CASES = [
     ]
   },
   {
-    "slug": "fifa",
+    "slug": "fifa-research",
     "brand": "FIFA",
     "title": "FIFA",
     "sub": "Gaming & voetbal",
