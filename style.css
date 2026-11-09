@@ -286,7 +286,7 @@ body {
 .hero__body {
   position: absolute;
   left: 50%;
-  bottom: clamp(4rem, 8.5vh, 5.75rem);
+  bottom: clamp(5rem, 10vh, 7rem);
   translate: -50% 0;
   z-index: 21;
   width: min(900px, calc(100% - 2 * var(--edge)));
@@ -298,20 +298,20 @@ body {
   line-height: 1.6;
 }
 
-/* Scroll-cue onder de microcopy: label + zacht stuiterend pijltje naar beneden */
+/* Scroll-cue onder de microcopy: label + zacht stuiterend pijltje (merk-oranje) */
 .hero__scroll {
   position: absolute;
   left: 50%;
-  bottom: clamp(1rem, 2.8vh, 1.75rem);
+  bottom: clamp(0.9rem, 2.4vh, 1.5rem);
   translate: -50% 0;
   z-index: 22;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.4rem;
-  color: #fff;
+  color: var(--orange);
   text-decoration: none;
-  opacity: 0.85;
+  opacity: 0.95;
   transition: opacity 0.3s var(--ease-out);
 }
 .hero__scroll:hover { opacity: 1; }
@@ -464,7 +464,7 @@ body {
   /* De zwevende dienst-pill en de dienst-pijlen zijn op touch nutteloos -> weg */
   .cursor-pill { display: none !important; }
   .hero-arrows, .head-nav { display: none !important; }
-  .hero__body { font-size: 1rem; bottom: clamp(4.5rem, 10vh, 5.75rem); }
+  .hero__body { font-size: 1rem; bottom: clamp(5.25rem, 11.5vh, 6.75rem); }
   .hero__scroll-label { font-size: 0.68rem; }
 }
 
@@ -697,7 +697,7 @@ a.contact__link:hover { color: var(--orange); }
      met een donkere boven-/onderrand voor de titel + het menu. */
   .diensten__cards { display: none; }
   .diensten__bg::after { background: linear-gradient(180deg, rgba(11,11,11,0.5) 0%, rgba(11,11,11,0.32) 42%, rgba(11,11,11,0.78) 100%); }
-  .dienst-item.is-active { text-shadow: 0 2px 16px rgba(0,0,0,0.75); }
+  .dienst-item.is-active { text-shadow: none; }
   .diensten__menu { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; }
 }
 

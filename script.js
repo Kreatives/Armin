@@ -700,7 +700,9 @@ function renderDienstCards(i) {
       let n;
       if (isVid) {
         n = document.createElement('video');
-        n.src = item.src; n.muted = true; n.loop = true; n.playsInline = true; n.autoplay = true; n.preload = 'metadata';
+        n.src = item.src; n.muted = true; n.loop = true; n.playsInline = true; n.autoplay = true;
+        n.preload = 'auto';                 // sneller spelen -> minder kans op zwart (bv. G-Shock)
+        if (c.thumb) n.poster = c.thumb;    // toon poster i.p.v. zwart terwijl de video laadt
       } else {
         n = document.createElement('img'); n.src = item.src; n.alt = '';
       }
