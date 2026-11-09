@@ -727,7 +727,11 @@ function buildDiensten() {
   if (!reel || !CASES.length) return;
   const inner = document.createElement('div');
   inner.className = 'diensten__reel-inner';
-  CASES.forEach(c => { const it = document.createElement('div'); it.className = 'dienst-item'; it.textContent = c.brand; inner.appendChild(it); });
+  CASES.forEach(c => {
+    const it = document.createElement('div'); it.className = 'dienst-item';
+    const t = document.createElement('span'); t.className = 'dienst-item__t'; t.textContent = c.brand;
+    it.appendChild(t); inner.appendChild(it);
+  });
   reel.appendChild(inner);
   dienstReelInner = inner;
   // Onderaan: de diensten (services). Klik = spring naar de eerste case met die dienst.
@@ -751,6 +755,22 @@ function buildDiensten() {
   const closeBtn = document.querySelector('[data-diensten-close]');
   if (closeBtn) closeBtn.addEventListener('click', closeDiensten);
   window.addEventListener('keydown', e => { if (e.key === 'Escape' && dienstOverlay().classList.contains('is-open')) closeDiensten(); });
+}
+
+// Case-titels zo groot mogelijk maken dat ze de rij vullen én binnen de breedte passen.
+// Korte merken (FIFA, AFCON) worden fors; lange merken krimpen precies tot ze passen.
+function fitDienstItems() {
+  if (!dienstReelInner) return;
+  const reel = dienstReelInner.parentElement;            // .diensten__reel
+  const avail = dienstReelInner.clientWidth - 6;         // breedte binnen de reel-padding
+  if (avail <= 0) return;                                // overlay nog verborgen -> later
+  const rowH = reel.clientHeight / 3;                    // hoogte van één reel-slot
+  const maxPx = rowH * 1.08;                             // vul de rij (cap tegen overlap)
+  dienstReelInner.querySelectorAll('.dienst-item__t').forEach(sp => {
+    sp.style.fontSize = '100px';
+    const w = sp.getBoundingClientRect().width || 1;
+    sp.style.fontSize = Math.max(16, Math.min(maxPx, (avail / w) * 100)) + 'px';
+  });
 }
 
 function setDienst(i, instant) {
@@ -785,6 +805,7 @@ function openDiensten() {
   const ov = dienstOverlay();
   ov.classList.add('is-open'); ov.setAttribute('aria-hidden', 'false');
   document.body.classList.add('diensten-open');
+  fitDienstItems();                   // titels schalen nu pas (reel heeft breedte/hoogte)
   setDienst(dienstIndex, true);       // reel-hoogte klopt nu pas (was hidden)
   ov.addEventListener('wheel', onDienstWheel, { passive: false });
   ov.addEventListener('touchstart', onDienstTouchStart, { passive: true });
@@ -882,6 +903,8 @@ function init() {
     fitText();
     resizeCanvas();
     buildHitMaps();
+    const ov = dienstOverlay();
+    if (ov && ov.classList.contains('is-open')) { fitDienstItems(); setDienst(dienstIndex, true); }
     // Alleen bij een breedte-wijziging (orientatie) de ring herbouwen en ScrollTrigger
     // verversen. Op mobiel verandert de hoogte constant (adresbalk) -> anders pin-sprongen.
     if (window.innerWidth === lastW) return;
