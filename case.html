@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
 
-  <link rel="stylesheet" href="style.css?v=m6" />
+  <link rel="stylesheet" href="style.css?v=m7" />
   <link rel="stylesheet" href="case.css?v=m4" />
 </head>
 <body class="case-page">
@@ -108,7 +108,7 @@
     var NEXT_EYEBROW = t('case.next.eyebrow', 'Next case');
 
     function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-    function isVideo(src) { return /\.mp4$/i.test(src); }
+    function isVideo(src) { return /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(src); }
     var isMobile = window.matchMedia('(max-width: 767px)').matches;
     function mediaTag(src, cls, eager) {
       if (!isVideo(src)) return '<img class="' + cls + '" src="' + src + '" alt="" loading="lazy" />';

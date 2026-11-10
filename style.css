@@ -451,20 +451,26 @@ body {
 
 /* Mobiel < 768px ------------------------------------------ */
 @media (max-width: 767px) {
+  /* svh = kleine viewport: de onderste content (paragraaf + scroll-cue) valt zo altijd
+     bóven de browserbalk, i.p.v. erachter (met 100vh verdween de scroll-cue). */
+  .hero { height: 100svh; }
   .hero__frame { top: clamp(1rem, 3vh, 2rem); }
   .hero__title { line-height: 0.86; }
 
-  /* Persoon: hoogte-gebaseerd, horizontaal gecentreerd, en tegen de onderkant van de sectie */
+  /* Persoon: groter en hoger (dichter bij de titel) zodat de paragraaf + scroll-cue
+     direct bij het landen zichtbaar zijn. */
   .stage__canvas, .head, .services {
-    height: 82%;
+    height: 92%;
     width: auto;
     aspect-ratio: var(--head-aspect);
     bottom: 0;
+    transform: translate(-50%, -3%);   /* omhoog i.p.v. de desktop +7% */
   }
   /* De zwevende dienst-pill en de dienst-pijlen zijn op touch nutteloos -> weg */
   .cursor-pill { display: none !important; }
   .hero-arrows, .head-nav { display: none !important; }
-  .hero__body { font-size: 1rem; bottom: clamp(5.25rem, 11.5vh, 6.75rem); }
+  .hero__body { font-size: 1rem; bottom: clamp(5.5rem, 12vh, 7rem); }
+  .hero__scroll { bottom: clamp(1.4rem, 3.4vh, 2.2rem); }
   .hero__scroll-label { font-size: 0.68rem; }
 }
 
@@ -488,8 +494,10 @@ body {
 /* --- Logo marquee --- */
 .marquee { overflow: hidden; padding: clamp(2.5rem, 6vh, 4rem) 0; background: transparent; color: var(--paper); }
 .marquee__viewport { overflow: hidden; }
-.marquee__track { display: flex; align-items: center; gap: 0; width: max-content; animation: marquee-scroll 60s linear infinite; will-change: transform; }
-.marquee:hover .marquee__track { animation-play-state: paused; }
+.marquee__track { display: flex; align-items: center; gap: 0; width: max-content; animation: marquee-scroll 45s linear infinite; will-change: transform; }
+/* Alleen pauzeren bij echte hover (muis). Op touch blijft :hover na een tik/scroll
+   "plakken" -> dat zette de marquee op mobiel stil. */
+@media (hover: hover) { .marquee:hover .marquee__track { animation-play-state: paused; } }
 /* Logo's exact zoals aangeleverd: direct op de donkere strip, geen chip/filter. */
 .marquee__item { flex: none; display: flex; align-items: center; justify-content: center; padding: 0 clamp(1.4rem, 2.6vw, 2.4rem); }
 .marquee__logo { height: clamp(3rem, 4.6vw, 4.2rem); width: auto; display: block; object-fit: contain; }

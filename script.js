@@ -67,6 +67,11 @@ const DEBUG = new URLSearchParams(location.search).has('debug');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const isMobile = () => matchMedia('(max-width: 767px)').matches;
 
+// Een bron/item is video als het CMS het zo markeert (kind) óf de extensie het zegt.
+// CMS-uploads zijn niet altijd .mp4 — ze kunnen ook .webm of .mov zijn (bv. de G-Shock-cover).
+const isVideoSrc = (src) => /\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(src || '');
+const isVideoItem = (m) => !!m && (m.kind === 'video' || isVideoSrc(typeof m === 'string' ? m : m.src));
+
 const stage      = document.querySelector('[data-stage]');
 const canvas     = document.querySelector('[data-canvas]');
 const ctx        = canvas.getContext('2d');
@@ -433,7 +438,8 @@ function buildMarquee() {
   if (!track) return;
   // CMS-override (window.CMS_MARQUEE) heeft voorrang, anders de lijst hierboven.
   const logos = (window.CMS_MARQUEE && window.CMS_MARQUEE.length) ? window.CMS_MARQUEE : LOGOS;
-  const items = logos.map(l => `<span class="marquee__item"><img class="marquee__logo" src="${l.src}" alt="${l.name || ''}" loading="lazy" /></span>`).join('');
+  // Niet lazy: de track-breedte moet meteen kloppen, anders beweegt de CSS-loop nauwelijks.
+  const items = logos.map(l => `<span class="marquee__item"><img class="marquee__logo" src="${l.src}" alt="${l.name || ''}" decoding="async" /></span>`).join('');
   track.innerHTML = items + items;                 // 2x voor een naadloze loop
 }
 
@@ -495,7 +501,31 @@ function createRing(stage, cardEls, opts) {
     for (let i = 0; i < cardEls.length; i++)
       cardEls[i].style.transform = `translate(-50%, -50%) rotateY(${i * angle + state.rot}deg)`;
   };
+
+  // Mobiel: speel alleen de video van de kaart die naar voren wijst; pauzeer de rest.
+  // Zo blijft het binnen de iOS-limiet van gelijktijdig spelende video's.
+  let frontIdx = -1;
+  const updateFront = () => {
+    if (!opts.trackFront) return;
+    let best = 0, bestD = Infinity;
+    for (let i = 0; i < N; i++) {
+      let a = ((i * angle + state.rot) % 360 + 360) % 360;
+      if (a > 180) a -= 360;
+      const d = Math.abs(a);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    if (best === frontIdx) return;
+    frontIdx = best;
+    cardEls.forEach((el, i) => {
+      const v = el.querySelector('video');
+      if (!v) return;
+      if (i === best) { v.play && v.play().catch(() => {}); }
+      else if (v.pause) v.pause();
+    });
+  };
+
   render();
+  updateFront();
 
   function tick() {
     if (!state.dragging) {
@@ -510,7 +540,7 @@ function createRing(stage, cardEls, opts) {
         if (Math.abs(state.vel) < 0.002) state.vel = 0;
       }
     }
-    if (state.rot !== state.last) { render(); state.last = state.rot; }
+    if (state.rot !== state.last) { render(); updateFront(); state.last = state.rot; }
     stage._raf = requestAnimationFrame(tick);
   }
   tick();
@@ -549,21 +579,24 @@ function buildCasesRing() {
     a.className = 'rcase';
     a.href = `/case?case=${encodeURIComponent(c.slug)}`;
     a.setAttribute('aria-label', `${c.title} — ${c.sub}`);
-    // Poster per case: foto-cover -> die foto; video-cover -> de thumb. Heeft een case
+    // Poster per case: video-cover -> de thumb; foto-cover -> die foto zelf. Heeft een case
     // een eigen video op schijf maar enkel de generieke fallback-thumb, gebruik dan het
     // eigen poster-frame (<slug>/poster.webp) i.p.v. overal dezelfde showreel-poster.
-    let poster = /\.(webp|jpe?g|png)$/i.test(c.cover.src) ? c.cover.src : c.thumb;
+    const coverIsVideo = isVideoItem(c.cover);
+    let poster = coverIsVideo ? c.thumb : c.cover.src;
     const dir = c.cover.src.match(/^(assets\/cases\/[^/]+)\//);
     if (dir && /showreel-poster/.test(poster)) poster = dir[1] + '/poster.webp';
-    // iOS kan niet veel autoplay-video's tegelijk aan -> op mobiel poster-afbeeldingen.
-    const media = (!isMobile() && /\.mp4$/i.test(c.cover.src))
-      ? `<video src="${c.cover.src}" poster="${poster}" autoplay muted loop playsinline preload="metadata"></video>`
+    // Video's spelen nu ook op mobiel. Om de iOS-decoderlimiet te ontzien speelt alleen de
+    // kaart vooraan (zie createRing -> trackFront); de rest toont zijn eigen poster.
+    const media = coverIsVideo
+      ? `<video src="${c.cover.src}" poster="${poster}" muted loop playsinline webkit-playsinline preload="metadata"${isMobile() ? '' : ' autoplay'}></video>`
       : `<img src="${poster}" alt="" loading="lazy" />`;
     a.innerHTML = `<div class="rcase__media">${media}<span class="rcase__brand">${c.brand}</span></div>`;
     return a;
   });
-  casesRing = createRing(stage, cards, { cardW, autoSpin: 0, introSpin: 3, spread: 1.07 });
-  stage.querySelectorAll('video').forEach(v => v.play && v.play().catch(() => {}));
+  casesRing = createRing(stage, cards, { cardW, autoSpin: 0, introSpin: 3, spread: 1.07, trackFront: isMobile() });
+  // Desktop: alles speelt direct. Mobiel: trackFront start de kaart vooraan.
+  if (!isMobile()) stage.querySelectorAll('video').forEach(v => v.play && v.play().catch(() => {}));
 }
 
 function buildPartnersRing() {
@@ -624,7 +657,7 @@ function cardMediaFor(c) {
 function landscapeVideoFor(c) {
   return [c.cover].concat(c.media || []).filter(Boolean)
     .map(m => (typeof m === 'string' ? { src: m, portrait: false } : m))
-    .filter(m => !m.portrait && /\.mp4$/i.test(m.src))
+    .filter(m => !m.portrait && isVideoItem(m))
     .map(m => m.src)[0] || null;
 }
 
@@ -644,7 +677,7 @@ function updateDienstBg(i) {
   dienstBgSrc = src;
   bg.innerHTML = '';
   if (!src) { bg.classList.remove('is-visible'); return; }
-  if (/\.mp4$/i.test(src)) {
+  if (isVideoSrc(src)) {
     const v = document.createElement('video');
     // iOS: muted + playsinline + autoplay als ATTRIBUUT, anders weigert autoplay.
     v.muted = true; v.defaultMuted = true; v.setAttribute('muted', '');
@@ -694,7 +727,7 @@ function renderDienstCards(i) {
     el.style.left = pos.x; el.style.top = pos.y;   // centerpunt; CSS centreert via transform
     el.style.animationDelay = (idx * 0.9) + 's';
 
-    const isVid = /\.mp4$/i.test(item.src);
+    const isVid = isVideoItem(item);
     // Hoofdmedia (in het scherm) + ambilight-dupe (zelfde bron, achter het scherm).
     const make = cls => {
       let n;
