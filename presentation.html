@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Armin Shah · Portfolio</title>
+
+<link rel="preconnect" href="https://use.typekit.net" crossorigin />
+<link rel="stylesheet" href="https://use.typekit.net/far7gpv.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet" />
+
+<style>
+/* =========================================================
+   Armin Shah — portfolio presentation
+   Zelfde taal als de site: Bebas Neue + Nexa, oranje accent,
+   near-black met grain + blueprint-grid, veel witruimte.
+   ========================================================= */
+
+/* 1. Reset + tokens ------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+img { display: block; max-width: 100%; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+
+:root {
+  --orange: #FD3708;
+  --orange-deep: #B02405;
+  --paper: #F7F5F0;
+  --ink: #111111;
+  --dark: #060606;
+  --dark-2: #101010;
+
+  --font-display: 'Bebas Neue', Impact, 'Arial Narrow', sans-serif;
+  --font-body: 'nexa', system-ui, -apple-system, sans-serif;
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --edge: clamp(1.5rem, 5.5vw, 6rem);
+  --container: 1560px;
+
+  --line: rgba(247, 245, 240, 0.14);
+  --muted: rgba(247, 245, 240, 0.55);
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--paper);
+  background: var(--dark);
+  overflow: hidden;
+  height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+}
+
+/* 2. Fixed textuur: blueprint-grid + grain -------------- */
+.fx-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: repeating-linear-gradient(to right,
+    transparent 0, transparent calc(25% - 1px),
+    rgba(255, 255, 255, 0.055) calc(25% - 1px), rgba(255, 255, 255, 0.055) 25%);
+}
+.fx-grain {
+  position: fixed; inset: -50%; width: 200%; height: 200%; z-index: 1;
+  pointer-events: none; opacity: 0.16;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") repeat;
+  animation: grain .3s steps(1) infinite;
+}
+@keyframes grain {
+  0%{transform:translate(0,0)} 20%{transform:translate(-6%,4%)}
+  40%{transform:translate(4%,-8%)} 60%{transform:translate(-4%,6%)}
+  80%{transform:translate(8%,0)} 100%{transform:translate(0,3%)}
+}
+.fx-glow {
+  position: fixed; z-index: 0; pointer-events: none;
+  width: 60vw; height: 60vw; left: -14vw; top: -22vw; border-radius: 50%;
+  background: radial-gradient(circle, rgba(253,55,8,0.22), rgba(253,55,8,0) 62%);
+  filter: blur(14px);
+}
+
+/* 3. Deck + slides -------------------------------------- */
+.deck { position: fixed; inset: 0; z-index: 2; overflow: hidden; }
+.slides {
+  display: flex; height: 100%; width: max-content;
+  --i: 0;
+  transform: translate3d(calc(var(--i) * -100vw), 0, 0);
+  transition: transform 0.9s var(--ease);
+}
+.slide {
+  position: relative;
+  flex: 0 0 100vw; width: 100vw; height: 100dvh;
+  overflow-y: auto; overflow-x: hidden;
+  display: grid; align-content: center;
+  padding: clamp(5rem, 11vh, 7.5rem) var(--edge) clamp(6.5rem, 16vh, 9rem);
+}
+.slide__inner { width: 100%; max-width: var(--container); margin: 0 auto; }
+
+/* Groot, zacht slidenummer als watermark (speels, editorial) */
+.slide__ghost {
+  position: absolute; z-index: -1; right: clamp(1rem, 3vw, 3rem); bottom: -2vh;
+  margin: 0; font-family: var(--font-display); line-height: 0.8;
+  font-size: clamp(14rem, 40vw, 44rem); color: rgba(247,245,240,0.035);
+  pointer-events: none; user-select: none;
+}
+
+/* 4. Gedeelde typografie -------------------------------- */
+.s-label {
+  display: block; margin: 0 0 clamp(1.4rem, 3vh, 2.4rem);
+  font-family: var(--font-display); font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  letter-spacing: 0.22em; text-transform: uppercase; color: var(--orange);
+}
+
+.s-h1 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  text-transform: uppercase; line-height: 0.92; letter-spacing: 0.005em;
+  font-size: clamp(3.2rem, 9vw, 9.5rem); color: var(--paper);
+}
+.s-h2 {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  text-transform: uppercase; line-height: 1.0; letter-spacing: 0.01em;
+  font-size: clamp(2.1rem, 4.8vw, 4.2rem); color: var(--paper);
+}
+.s-lead {
+  margin: 0; font-family: var(--font-display); font-weight: 400;
+  text-transform: uppercase; line-height: 1.04; letter-spacing: -0.005em;
+  font-size: clamp(1.7rem, 3.5vw, 3.3rem); color: var(--paper);
+}
+.s-lead b { color: var(--orange); font-weight: 400; }
+.s-text { margin: 0; max-width: 56ch; font-size: clamp(1rem, 1.25vw, 1.2rem); line-height: 1.62; color: var(--muted); }
+.accent { color: var(--orange); }
+
+/* Reveal: children van de actieve slide klimmen omhoog ---- */
+[data-anim] {
+  opacity: 0; transform: translateY(44px);
+  transition: opacity 0.75s var(--ease), transform 0.75s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.slide.is-active [data-anim] { opacity: 1; transform: none; }
+
+/* ============ Slide 1 — Intro ============ */
+.cover { display: grid; grid-template-columns: 1.15fr 0.85fr; gap: clamp(2rem, 6vw, 6rem); align-items: center; }
+.cover__kicker { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: clamp(1.6rem, 4vh, 3rem);
+  font-size: 0.9rem; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
+.cover__title { font-size: clamp(3.6rem, 13vw, 12rem); color: var(--orange);
+  text-shadow: 0 0 46px rgba(253, 55, 8, 0.28); }
+.cover__sub { margin: clamp(1.4rem, 3vh, 2.2rem) 0 0; max-width: 30ch;
+  font-size: clamp(1.05rem, 1.5vw, 1.35rem); line-height: 1.5; color: rgba(247,245,240,0.8); }
+.cover__tags { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: clamp(1.6rem, 4vh, 2.6rem); }
+.chip { padding: 0.5rem 1rem; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(247,245,240,0.75); }
+.cover__portrait { position: relative; aspect-ratio: 3 / 4; border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(247,245,240,0.12); box-shadow: 0 40px 90px rgba(0,0,0,0.55); }
+.cover__portrait img { width: 100%; height: 100%; object-fit: cover; }
+.cover__tick { position: absolute; left: 14px; bottom: 12px; z-index: 2; font-family: var(--font-display);
+  font-size: 1rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--paper);
+  background: rgba(6,6,6,0.5); padding: 0.3rem 0.7rem; border-radius: 4px; backdrop-filter: blur(4px); }
+
+/* Logo-marquee ("worked with") — zelfde signatuur als de site */
+.cover__marquee { grid-column: 1 / -1; margin-top: clamp(1.8rem, 4.5vh, 3.2rem); }
+.cover__marquee-label { display: block; margin: 0 0 0.9rem; font-size: 0.72rem;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); }
+.marquee-viewport { position: relative; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent); }
+.marquee-track { display: flex; align-items: center; width: max-content; animation: marquee 40s linear infinite; }
+.marquee-track img { height: clamp(1.5rem, 2.4vw, 2.3rem); width: auto; object-fit: contain;
+  margin: 0 clamp(1.4rem, 3vw, 2.6rem); opacity: 0.72; transition: opacity 0.3s var(--ease); }
+.marquee-track img:hover { opacity: 1; }
+.cover__marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ============ Slide 2 — About ============ */
+.about { display: grid; grid-template-columns: 1.25fr 0.95fr; gap: clamp(2rem, 6vw, 5.5rem); align-items: center; }
+.about__copy > * + * { margin-top: clamp(1.4rem, 3vh, 2.2rem); }
+.about__meta { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: 0.9rem; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--orange); }
+.about__meta span + span { border-left: 1px solid var(--line); padding-left: 1.2rem; }
+.about__imgs { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.8rem, 1.6vw, 1.2rem); }
+.about__imgs figure { margin: 0; border-radius: 8px; overflow: hidden; border: 1px solid rgba(247,245,240,0.1); }
+.about__imgs img { width: 100%; height: 100%; object-fit: cover; aspect-ratio: 3 / 4; }
+.about__imgs figure:first-child { margin-top: clamp(1.5rem, 5vh, 3.5rem); }
+
+/* ============ Slide 3 — Journey ============ */
+.journey { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+.journey__head { position: sticky; top: 0; }
+.tl { display: grid; }
+.tl__row { display: grid; grid-template-columns: 7rem 1fr auto; gap: clamp(1rem, 2.5vw, 2.2rem);
+  align-items: baseline; padding: clamp(0.85rem, 1.7vh, 1.25rem) 0; border-top: 1px solid var(--line); }
+.tl__row:last-child { border-bottom: 1px solid var(--line); }
+.tl__year { font-family: var(--font-display); font-size: clamp(1rem, 1.4vw, 1.35rem);
+  letter-spacing: 0.04em; color: var(--orange); white-space: nowrap; }
+.tl__org { font-family: var(--font-display); font-size: clamp(1.25rem, 2vw, 1.9rem);
+  letter-spacing: 0.01em; text-transform: uppercase; color: var(--paper); }
+.tl__role { font-size: clamp(0.82rem, 1vw, 0.98rem); text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); text-align: right; }
+
+/* ============ Slide 4 — Services ============ */
+.services { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(2rem, 6vw, 5rem); align-items: start; }
+.svc { display: grid; }
+.svc__row { display: grid; grid-template-columns: 3.4rem 1fr; gap: clamp(1rem, 2.5vw, 2.4rem);
+  align-items: start; padding: clamp(1.1rem, 2.4vh, 1.7rem) 0; border-top: 1px solid var(--line);
+  transition: border-color 0.4s var(--ease); }
+.svc__row:last-child { border-bottom: 1px solid var(--line); }
+.svc__num { font-family: var(--font-display); font-size: clamp(1.1rem, 1.5vw, 1.5rem); color: var(--orange); }
+.svc__name { margin: 0 0 0.35rem; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(1.4rem, 2.3vw, 2.1rem); letter-spacing: 0.01em; text-transform: uppercase;
+  color: var(--paper); transition: color 0.4s var(--ease); }
+.svc__desc { margin: 0; max-width: 54ch; font-size: clamp(0.95rem, 1.1vw, 1.08rem); line-height: 1.55; color: var(--muted); }
+.svc__row:hover { border-color: rgba(253,55,8,0.5); }
+.svc__row:hover .svc__name { color: var(--orange); }
+
+/* ============ Slide 5 — Work (carrousel) ============ */
+.work__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1.5rem;
+  flex-wrap: wrap; margin-bottom: clamp(1.4rem, 3.5vh, 2.4rem); }
+.work__nav { display: flex; align-items: center; gap: clamp(1rem, 2vw, 1.8rem); }
+.work__count { font-family: var(--font-display); font-size: clamp(1rem, 1.4vw, 1.3rem);
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.work__arrows { display: flex; gap: 0.6rem; }
+.c-arrow { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 999px;
+  border: 1px solid rgba(247,245,240,0.25); color: var(--paper); background: transparent;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease), opacity 0.3s; }
+.c-arrow:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.c-arrow:disabled { opacity: 0.3; cursor: default; }
+.c-arrow:disabled:hover { background: transparent; color: var(--paper); border-color: rgba(247,245,240,0.25); }
+.c-arrow svg { width: 20px; height: 20px; }
+
+.carousel { overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; cursor: grab; user-select: none;
+  padding-bottom: 0.5rem; }
+.carousel::-webkit-scrollbar { display: none; }
+.carousel.is-dragging { cursor: grabbing; scroll-snap-type: none; }
+.carousel__track { display: flex; gap: clamp(1rem, 1.8vw, 1.6rem); width: max-content; }
+.vcase { flex: 0 0 clamp(300px, 40vw, 560px); scroll-snap-align: start; }
+.vcase__screen { position: relative; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden;
+  border: 1px solid rgba(247,245,240,0.1); background: var(--dark-2); box-shadow: 0 30px 60px rgba(0,0,0,0.45); }
+.vcase__video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.vcase__year { position: absolute; top: 0.8rem; right: 0.95rem; z-index: 2; font-family: var(--font-display);
+  font-size: 0.95rem; letter-spacing: 0.05em; color: var(--orange); text-shadow: 0 2px 10px rgba(0,0,0,0.6); }
+.vcase__brand { margin: clamp(0.9rem, 1.6vh, 1.2rem) 0 0; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(1.3rem, 1.9vw, 1.75rem); letter-spacing: 0.02em; text-transform: uppercase; color: var(--paper); line-height: 1; }
+.vcase__role { margin: 0.3rem 0 0; font-size: 0.78rem; letter-spacing: 0.05em; text-transform: uppercase; color: var(--orange); }
+.vcase__desc { margin: 0.5rem 0 0; max-width: 42ch; font-size: clamp(0.92rem, 1.05vw, 1rem); line-height: 1.5; color: var(--muted); }
+.work__more { margin: clamp(1.3rem, 3vh, 2rem) 0 0; font-size: 0.9rem; letter-spacing: 0.03em;
+  text-transform: uppercase; color: var(--muted); }
+.work__more b { color: var(--paper); font-weight: 400; }
+
+/* ============ Slide 6 — Impact ============ */
+.impact__stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: clamp(1rem, 2.5vw, 2.4rem);
+  padding-bottom: clamp(1.8rem, 4vh, 3rem); border-bottom: 1px solid var(--line); }
+.stat__num { font-family: var(--font-display); font-weight: 400; line-height: 0.9;
+  font-size: clamp(3rem, 7vw, 6.5rem); color: var(--orange); }
+.stat__label { margin-top: 0.4rem; font-size: clamp(0.82rem, 1vw, 0.98rem); letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted); max-width: 18ch; }
+.impact__grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: clamp(2rem, 5vw, 4rem);
+  margin-top: clamp(1.8rem, 4vh, 3rem); align-items: start; }
+.partners { display: grid; grid-template-columns: repeat(6, 1fr); gap: clamp(0.6rem, 1.6vw, 1.4rem) clamp(1rem, 2.5vw, 2.2rem);
+  align-items: center; }
+.partners img { height: clamp(1.6rem, 2.6vw, 2.6rem); width: 100%; object-fit: contain;
+  opacity: 0.8; transition: opacity 0.4s var(--ease); }
+.partners img:hover { opacity: 1; }
+.recog__item { padding: clamp(0.8rem, 1.8vh, 1.2rem) 0; border-top: 1px solid var(--line); }
+.recog__item:last-child { border-bottom: 1px solid var(--line); }
+.recog__year { font-family: var(--font-display); font-size: 1rem; letter-spacing: 0.06em; color: var(--orange); }
+.recog__name { margin: 0.2rem 0 0; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(1.15rem, 1.7vw, 1.5rem); text-transform: uppercase; color: var(--paper); }
+.recog__note { margin: 0.2rem 0 0; font-size: 0.86rem; color: var(--muted); }
+.col-label { margin: 0 0 clamp(1rem, 2vh, 1.4rem); font-size: 0.8rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--muted); }
+
+/* ============ Slide 7 — Contact ============ */
+.contact { text-align: center; display: grid; justify-items: center; }
+.contact__big { font-size: clamp(3.4rem, 13vw, 12rem); color: var(--orange); text-shadow: 0 0 46px rgba(253,55,8,0.26); }
+.contact__row { display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(1rem, 3vw, 2.6rem);
+  margin-top: clamp(1.6rem, 4vh, 2.6rem); }
+.contact__link { font-size: clamp(1.05rem, 1.6vw, 1.4rem); color: var(--paper);
+  border-bottom: 1px solid transparent; transition: border-color 0.3s var(--ease), color 0.3s var(--ease); padding-bottom: 2px; }
+.contact__link:hover { color: var(--orange); border-color: var(--orange); }
+.contact__socials { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.2rem;
+  margin-top: clamp(1.4rem, 3vh, 2.2rem); font-size: 0.9rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.contact__socials a:hover { color: var(--paper); }
+.contact__wordmark { margin-top: clamp(2rem, 6vh, 4rem); font-family: var(--font-display);
+  font-size: clamp(2rem, 7vw, 6rem); letter-spacing: 0.08em; color: rgba(247,245,240,0.1); line-height: 1; }
+.contact__copy { margin-top: 1.2rem; font-size: 0.82rem; letter-spacing: 0.05em; color: rgba(247,245,240,0.4); }
+
+/* 5. Top chrome: brand + counter + progress ------------- */
+.topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30; display: flex;
+  justify-content: space-between; align-items: center; padding: clamp(1.1rem, 2.4vh, 1.8rem) var(--edge);
+  pointer-events: none; }
+.topbar__brand { font-family: var(--font-display); font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  letter-spacing: 0.14em; text-transform: uppercase; color: var(--paper); }
+.topbar__brand b { color: var(--orange); font-weight: 400; }
+.topbar__count { font-family: var(--font-display); font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  letter-spacing: 0.1em; color: var(--muted); }
+.topbar__count b { color: var(--orange); font-weight: 400; }
+.progress { position: fixed; top: 0; left: 0; right: 0; z-index: 31; height: 3px; background: rgba(247,245,240,0.08); }
+.progress__fill { height: 100%; width: 100%; transform-origin: left center; transform: scaleX(0);
+  background: var(--orange); transition: transform 0.9s var(--ease); }
+
+/* 6. Bottom dock: prev / chapters / next ---------------- */
+.dock { position: fixed; left: 50%; bottom: clamp(1rem, 3vh, 1.8rem); z-index: 30;
+  transform: translateX(-50%); display: flex; align-items: center; gap: clamp(0.5rem, 1.2vw, 0.9rem);
+  padding: 0.5rem; border-radius: 999px; border: 1px solid rgba(247,245,240,0.12);
+  background: rgba(16,16,16,0.72); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-width: calc(100vw - 2rem); }
+.nav-arrow { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 999px;
+  border: 1px solid rgba(247,245,240,0.22); color: var(--paper); flex: none;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease), border-color 0.3s var(--ease), opacity 0.3s; }
+.nav-arrow:hover { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+.nav-arrow:disabled { opacity: 0.28; cursor: default; }
+.nav-arrow:disabled:hover { background: none; color: var(--paper); border-color: rgba(247,245,240,0.22); }
+.nav-arrow svg { width: 20px; height: 20px; }
+
+.chapters { display: flex; align-items: center; gap: 0.2rem; overflow-x: auto; scrollbar-width: none; }
+.chapters::-webkit-scrollbar { display: none; }
+.chapter { display: inline-flex; align-items: center; gap: 0.55rem; flex: none;
+  padding: 0.5rem 0.85rem; border-radius: 999px; color: var(--muted);
+  transition: background 0.3s var(--ease), color 0.3s var(--ease); white-space: nowrap; }
+.chapter__num { font-family: var(--font-display); font-size: 0.95rem; letter-spacing: 0.05em; color: inherit; }
+.chapter__label { font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: inherit; }
+.chapter:hover { color: var(--paper); }
+.chapter.is-active { background: var(--orange); color: #fff; }
+.chapter.is-active .chapter__num, .chapter.is-active .chapter__label { color: #fff; }
+
+/* Fullscreen-knop */
+.fs-btn { position: fixed; right: var(--edge); bottom: clamp(1rem, 3vh, 1.8rem); z-index: 30;
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 999px;
+  border: 1px solid rgba(247,245,240,0.16); color: var(--muted); background: rgba(16,16,16,0.6);
+  backdrop-filter: blur(10px); transition: color 0.3s var(--ease), border-color 0.3s var(--ease); }
+.fs-btn:hover { color: var(--paper); border-color: var(--paper); }
+.fs-btn svg { width: 18px; height: 18px; }
+
+/* Hint-toast */
+.hint { position: fixed; left: 50%; bottom: clamp(5rem, 11vh, 6.5rem); z-index: 29; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1.1rem; border-radius: 999px;
+  border: 1px solid rgba(247,245,240,0.12); background: rgba(16,16,16,0.7); backdrop-filter: blur(10px);
+  font-size: 0.78rem; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap;
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+.hint kbd { font-family: var(--font-body); font-size: 0.72rem; padding: 0.15rem 0.45rem; border-radius: 5px;
+  border: 1px solid rgba(247,245,240,0.2); color: var(--paper); }
+.hint.is-hidden { opacity: 0; transform: translateX(-50%) translateY(10px); pointer-events: none; }
+
+/* 7. Responsive ----------------------------------------- */
+@media (max-width: 960px) {
+  .cover, .about, .journey, .services, .impact__grid { grid-template-columns: 1fr; }
+  .cover__portrait { display: none; }
+  .about__imgs figure:first-child { margin-top: 0; }
+  .vcase { flex-basis: 72vw; }
+  .impact__stats { grid-template-columns: repeat(2, 1fr); row-gap: 1.6rem; }
+  .partners { grid-template-columns: repeat(4, 1fr); }
+  .journey__head { position: static; }
+  .chapter__label { display: none; }
+  .fs-btn { display: none; }
+}
+@media (max-width: 560px) {
+  .vcase { flex-basis: 84vw; }
+  .tl__row { grid-template-columns: 4.5rem 1fr; }
+  .tl__role { display: none; }
+  .cover__kicker { flex-direction: column; gap: 0.3rem; }
+  .partners { grid-template-columns: repeat(3, 1fr); }
+  .slide { padding-left: 1.3rem; padding-right: 1.3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slides, [data-anim], .progress__fill { transition: none !important; }
+  .fx-grain, .marquee-track { animation: none; }
+  [data-anim] { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="fx-grid" aria-hidden="true"></div>
+<div class="fx-glow" aria-hidden="true"></div>
+<div class="fx-grain" aria-hidden="true"></div>
+
+<!-- Progressbalk + topbar -->
+<div class="progress" aria-hidden="true"><div class="progress__fill" data-progress></div></div>
+<header class="topbar">
+  <span class="topbar__brand">ARMIN SHAH <b>· PORTFOLIO</b></span>
+  <span class="topbar__count"><b data-current>01</b> / <span data-total>07</span></span>
+</header>
+
+<!-- Deck -->
+<main class="deck" aria-label="Portfolio presentatie">
+  <div class="slides" data-slides>
+
+    <!-- 1. INTRO -->
+    <section class="slide" aria-roledescription="slide" aria-label="Intro">
+      <span class="slide__ghost" aria-hidden="true">01</span>
+      <div class="slide__inner">
+        <div class="cover">
+          <div class="cover__text">
+            <div class="cover__kicker" data-anim style="--d:60ms">
+              <span>Creative strategist &amp; storyteller</span>
+              <span>Portfolio · 2026</span>
+            </div>
+            <h1 class="s-h1 cover__title" data-anim style="--d:140ms">ARMIN SHAH</h1>
+            <p class="cover__sub" data-anim style="--d:240ms">Award-winning creative strategist and storyteller working across football and culture.</p>
+            <div class="cover__tags" data-anim style="--d:340ms">
+              <span class="chip">Football &amp; culture</span>
+              <span class="chip">Strategy</span>
+              <span class="chip">Format &amp; IP</span>
+              <span class="chip">Storytelling</span>
+            </div>
+          </div>
+          <figure class="cover__portrait" data-anim style="--d:300ms">
+            <img src="assets/about/armin-3.jpeg" alt="Portrait of Armin Shah" loading="eager" />
+          </figure>
+          <div class="cover__marquee" data-anim style="--d:460ms">
+            <span class="cover__marquee-label">Worked with</span>
+            <div class="marquee-viewport"><div class="marquee-track" data-logo-marquee></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. ABOUT -->
+    <section class="slide" aria-roledescription="slide" aria-label="About">
+      <span class="slide__ghost" aria-hidden="true">02</span>
+      <div class="slide__inner">
+        <div class="about">
+          <div class="about__copy">
+            <p class="s-label" data-anim style="--d:40ms">About</p>
+            <h2 class="s-lead" data-anim style="--d:120ms">Armin Shah works where <b>football and culture</b> meet. As a creative strategist and storyteller he builds ideas and formats that stay with people, from talkshow to podcast, from brand to generation.</h2>
+            <p class="s-text" data-anim style="--d:240ms">Over the past decade his work evolved from independent media into collaborations with some of the biggest names in sport, media and culture, always guided by the same approach: understand culture first, then create something that belongs within it.</p>
+            <div class="about__meta" data-anim style="--d:340ms">
+              <span>Creative strategist</span>
+              <span>Storyteller</span>
+              <span>10+ years</span>
+            </div>
+          </div>
+          <div class="about__imgs">
+            <figure data-anim style="--d:260ms"><img src="assets/about/armin-1.jpeg" alt="Armin Shah in the Kick 't Met studio" loading="lazy" /></figure>
+            <figure data-anim style="--d:360ms"><img src="assets/about/armin-2.jpg" alt="Armin Shah during a talkshow recording" loading="lazy" /></figure>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. JOURNEY -->
+    <section class="slide" aria-roledescription="slide" aria-label="Journey">
+      <span class="slide__ghost" aria-hidden="true">03</span>
+      <div class="slide__inner">
+        <div class="journey">
+          <div class="journey__head">
+            <p class="s-label" data-anim style="--d:40ms">The story</p>
+            <h2 class="s-h2" data-anim style="--d:120ms">The industry<br />became my<br /><span class="accent">education</span></h2>
+            <p class="s-text" data-anim style="--d:220ms; margin-top:1.6rem">From editor at eighteen to building original shows. Ten years across media, fashion, music, culture and sport.</p>
+          </div>
+          <div class="tl">
+            <div class="tl__row" data-anim style="--d:160ms"><span class="tl__year">2015</span><span class="tl__org">BALLINNN</span><span class="tl__role">Editor &amp; Writer</span></div>
+            <div class="tl__row" data-anim style="--d:210ms"><span class="tl__year">2016</span><span class="tl__org">Filling Pieces</span><span class="tl__role">Digital Marketer</span></div>
+            <div class="tl__row" data-anim style="--d:260ms"><span class="tl__year">2017 →</span><span class="tl__org">CONVO Talkshow</span><span class="tl__role">Founder, Creator &amp; Host</span></div>
+            <div class="tl__row" data-anim style="--d:310ms"><span class="tl__year">2019</span><span class="tl__org">Warner Music Group</span><span class="tl__role">Marketing &amp; A&amp;R</span></div>
+            <div class="tl__row" data-anim style="--d:360ms"><span class="tl__year">2021</span><span class="tl__org">Complex Networks</span><span class="tl__role">Creative Director, Benelux</span></div>
+            <div class="tl__row" data-anim style="--d:410ms"><span class="tl__year">2023 →</span><span class="tl__org">Ziggo Sport</span><span class="tl__role">Creator, Producer &amp; Host</span></div>
+            <div class="tl__row" data-anim style="--d:460ms"><span class="tl__year">2023 →</span><span class="tl__org">Independent</span><span class="tl__role">FIFA · AFCON · Telfaz11</span></div>
+            <div class="tl__row" data-anim style="--d:510ms"><span class="tl__year">2025 →</span><span class="tl__org">The Legacy Show</span><span class="tl__role">Co-Founder &amp; Creator</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SERVICES -->
+    <section class="slide" aria-roledescription="slide" aria-label="Services">
+      <span class="slide__ghost" aria-hidden="true">04</span>
+      <div class="slide__inner">
+        <div class="services">
+          <div class="services__head">
+            <p class="s-label" data-anim style="--d:40ms">What I do</p>
+            <h2 class="s-h2" data-anim style="--d:120ms">Cultural insight,<br />turned into things<br />people actually <span class="accent">watch</span></h2>
+          </div>
+          <div class="svc">
+            <div class="svc__row" data-anim style="--d:180ms"><span class="svc__num">01</span><div><h3 class="svc__name">Creative &amp; cultural strategy</h3><p class="svc__desc">Cultural insight, positioning and creative strategy for brands, organisations and talent.</p></div></div>
+            <div class="svc__row" data-anim style="--d:240ms"><span class="svc__num">02</span><div><h3 class="svc__name">Concept &amp; format development</h3><p class="svc__desc">Developing original campaigns, entertainment formats and media concepts from the ground up.</p></div></div>
+            <div class="svc__row" data-anim style="--d:300ms"><span class="svc__num">03</span><div><h3 class="svc__name">Marketing &amp; audience strategy</h3><p class="svc__desc">Defining how ideas are positioned, distributed and connected to the audiences they are built for.</p></div></div>
+            <div class="svc__row" data-anim style="--d:360ms"><span class="svc__num">04</span><div><h3 class="svc__name">Creative production</h3><p class="svc__desc">Taking ideas from concept to execution across film, television, digital and social.</p></div></div>
+            <div class="svc__row" data-anim style="--d:420ms"><span class="svc__num">05</span><div><h3 class="svc__name">Storytelling &amp; content</h3><p class="svc__desc">Developing stories and content rooted in people, culture and entertainment.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. WORK -->
+    <section class="slide" aria-roledescription="slide" aria-label="Work">
+      <span class="slide__ghost" aria-hidden="true">05</span>
+      <div class="slide__inner">
+        <div class="work__head">
+          <div>
+            <p class="s-label" data-anim style="--d:40ms">Selected work</p>
+            <h2 class="s-h2" data-anim style="--d:110ms">Cases</h2>
+          </div>
+          <div class="work__nav" data-anim style="--d:160ms">
+            <span class="work__count">Football · Culture · Brands</span>
+            <div class="work__arrows">
+              <button class="c-arrow" type="button" data-carousel-prev aria-label="Vorige case">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="c-arrow" type="button" data-carousel-next aria-label="Volgende case">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="carousel" data-carousel data-anim style="--d:210ms">
+          <div class="carousel__track" data-carousel-track>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/kick-t-met/01-gimenez-en-jahanbakhsh.mp4" poster="assets/cases/kick-t-met/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2024</span>
+              </div>
+              <h3 class="vcase__brand">Kick 't Met</h3>
+              <p class="vcase__role">Host &amp; Concept · Ziggo Sport</p>
+              <p class="vcase__desc">Ziggo Sport talkshow where football meets music and street culture.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/convo/convo-1.mp4" poster="assets/cases/convo/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2017</span>
+              </div>
+              <h3 class="vcase__brand">CONVO</h3>
+              <p class="vcase__role">Founder &amp; Host</p>
+              <p class="vcase__desc">Long-form conversations with voices from music, culture and society.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/hot-ones/clip-01.mp4" poster="assets/cases/hot-ones/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2024</span>
+              </div>
+              <h3 class="vcase__brand">Hot Ones</h3>
+              <p class="vcase__role">Host · KFC × Sprite</p>
+              <p class="vcase__desc">The hot-wing interview format, built for KFC × Sprite.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/red-bull-rap-champs/clip-01.mp4" poster="assets/cases/red-bull-rap-champs/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2023</span>
+              </div>
+              <h3 class="vcase__brand">Red Bull Rap Champs</h3>
+              <p class="vcase__role">Host &amp; Concept</p>
+              <p class="vcase__desc">Host of Red Bull's rap battle competition.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/complex-puma/clip-01.mp4" poster="assets/cases/complex-puma/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2023</span>
+              </div>
+              <h3 class="vcase__brand">Complex × Puma</h3>
+              <p class="vcase__role">Creative Director</p>
+              <p class="vcase__desc">Creative direction for a Complex × Puma brand film.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/reebok/clip-01.mp4" poster="assets/cases/reebok/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2022</span>
+              </div>
+              <h3 class="vcase__brand">Reebok</h3>
+              <p class="vcase__role">Creative Director</p>
+              <p class="vcase__desc">Creative direction for the Back to Classics campaign.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/g-shock/clip-01.mp4" poster="assets/cases/g-shock/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2023</span>
+              </div>
+              <h3 class="vcase__brand">Sneaker Shopping</h3>
+              <p class="vcase__role">Host · G-Shock</p>
+              <p class="vcase__desc">Sneaker Shopping, the branded series for G-Shock.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/zalando/clip-01.mp4" poster="assets/cases/zalando/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2024</span>
+              </div>
+              <h3 class="vcase__brand">Zalando</h3>
+              <p class="vcase__role">Host</p>
+              <p class="vcase__desc">Fashion meets culture in a Zalando content series.</p>
+            </article>
+            <article class="vcase">
+              <div class="vcase__screen">
+                <video class="vcase__video" src="assets/cases/adidas/clip-01.mp4" poster="assets/cases/adidas/poster.webp" muted loop playsinline preload="metadata"></video>
+                <span class="vcase__year">2024</span>
+              </div>
+              <h3 class="vcase__brand">adidas</h3>
+              <p class="vcase__role">Creative &amp; Host</p>
+              <p class="vcase__desc">Social-first content series as creative and host for adidas.</p>
+            </article>
+          </div>
+        </div>
+        <p class="work__more" data-anim style="--d:560ms">Plus <b>FIFA · AFCON · Telfaz11 · Puma Creative Camp · Rabobank · Kick 't Net</b></p>
+      </div>
+    </section>
+
+    <!-- 6. IMPACT -->
+    <section class="slide" aria-roledescription="slide" aria-label="Impact">
+      <span class="slide__ghost" aria-hidden="true">06</span>
+      <div class="slide__inner">
+        <p class="s-label" data-anim style="--d:40ms">Highlights</p>
+        <div class="impact__stats">
+          <div data-anim style="--d:120ms"><div class="stat__num">10+</div><p class="stat__label">Years across creative industries</p></div>
+          <div data-anim style="--d:180ms"><div class="stat__num">5</div><p class="stat__label">Industries worked across</p></div>
+          <div data-anim style="--d:240ms"><div class="stat__num">100+</div><p class="stat__label">CONVO episodes</p></div>
+          <div data-anim style="--d:300ms"><div class="stat__num">25+</div><p class="stat__label">Brand collaborations</p></div>
+        </div>
+        <div class="impact__grid">
+          <div>
+            <p class="col-label" data-anim style="--d:300ms">Selected partners</p>
+            <div class="partners" data-anim style="--d:360ms">
+              <img src="assets/logos/ziggo.png" alt="Ziggo" loading="lazy" />
+              <img src="assets/logos/complex.png" alt="Complex" loading="lazy" />
+              <img src="assets/logos/puma.png" alt="Puma" loading="lazy" />
+              <img src="assets/logos/red-bull.png" alt="Red Bull" loading="lazy" />
+              <img src="assets/logos/adidas.png" alt="adidas" loading="lazy" />
+              <img src="assets/logos/reebok.png" alt="Reebok" loading="lazy" />
+              <img src="assets/logos/gshock.png" alt="G-Shock" loading="lazy" />
+              <img src="assets/logos/zalando.png" alt="Zalando" loading="lazy" />
+              <img src="assets/logos/fifa.png" alt="FIFA" loading="lazy" />
+              <img src="assets/logos/kfc.png" alt="KFC" loading="lazy" />
+              <img src="assets/logos/telfaz.png" alt="Telfaz11" loading="lazy" />
+              <img src="assets/logos/afcon.png" alt="AFCON" loading="lazy" />
+            </div>
+          </div>
+          <div>
+            <p class="col-label" data-anim style="--d:360ms">Recognition</p>
+            <div class="recog__item" data-anim style="--d:420ms"><span class="recog__year">2019</span><h3 class="recog__name">Dutch YouTube Awards</h3><p class="recog__note">Best Journalism Award · CONVO Talkshow</p></div>
+            <div class="recog__item" data-anim style="--d:480ms"><span class="recog__year">2026</span><h3 class="recog__name">Televizier-Ring</h3><p class="recog__note">Nomination · Kick 't Met</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. CONTACT -->
+    <section class="slide" aria-roledescription="slide" aria-label="Contact">
+      <span class="slide__ghost" aria-hidden="true">07</span>
+      <div class="slide__inner">
+        <div class="contact">
+          <p class="s-label" data-anim style="--d:40ms">Let's work together</p>
+          <h2 class="s-h1 contact__big" data-anim style="--d:120ms">LET'S TALK</h2>
+          <div class="contact__row" data-anim style="--d:240ms">
+            <a class="contact__link" href="mailto:hello@arminshah.nl">hello@arminshah.nl</a>
+            <a class="contact__link" href="https://wa.me/31640908692">+31 6 40 90 86 92</a>
+          </div>
+          <div class="contact__socials" data-anim style="--d:320ms">
+            <a href="https://www.instagram.com/arminxshah/?hl=en" target="_blank" rel="noopener">Instagram</a>
+            <a href="https://linkedin.com/in/armin-shah-b2a626143" target="_blank" rel="noopener">LinkedIn</a>
+            <a href="https://substack.com/@arminshah" target="_blank" rel="noopener">Substack</a>
+          </div>
+          <div class="contact__wordmark" data-anim style="--d:420ms" aria-hidden="true">ARMIN SHAH</div>
+          <p class="contact__copy" data-anim style="--d:480ms">© 2026 Armin Shah · Creative strategist &amp; storyteller</p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- Hint -->
+<div class="hint" data-hint>
+  <span>Navigate with</span><kbd>←</kbd><kbd>→</kbd><span>· swipe · or the bar below ·</span><kbd>F</kbd><span>for fullscreen</span>
+</div>
+
+<!-- Onderbalk: vorige / hoofdstukken / volgende -->
+<nav class="dock" aria-label="Slide-navigatie">
+  <button class="nav-arrow" data-prev type="button" aria-label="Vorige slide">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+  <div class="chapters" data-chapters role="tablist" aria-label="Ga naar slide"></div>
+  <button class="nav-arrow" data-next type="button" aria-label="Volgende slide">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
+</nav>
+
+<button class="fs-btn" data-fs type="button" aria-label="Fullscreen">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
+<script>
+(function () {
+  var slidesEl = document.querySelector('[data-slides]');
+  var slides   = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var chaptersWrap = document.querySelector('[data-chapters]');
+  var prevBtn  = document.querySelector('[data-prev]');
+  var nextBtn  = document.querySelector('[data-next]');
+  var fsBtn    = document.querySelector('[data-fs]');
+  var curEl    = document.querySelector('[data-current]');
+  var totalEl  = document.querySelector('[data-total]');
+  var fillEl   = document.querySelector('[data-progress]');
+  var hintEl   = document.querySelector('[data-hint]');
+  var N = slides.length;
+  var i = 0;
+  var TITLES = ['Intro', 'About', 'Journey', 'Services', 'Work', 'Impact', 'Contact'];
+
+  // Hoofdstukken (PowerPoint-achtige sprong-balk) opbouwen
+  var chapters = TITLES.map(function (title, idx) {
+    var b = document.createElement('button');
+    b.className = 'chapter';
+    b.type = 'button';
+    b.setAttribute('role', 'tab');
+    b.innerHTML = '<span class="chapter__num">' + String(idx + 1).padStart(2, '0') + '</span>' +
+                  '<span class="chapter__label">' + title + '</span>';
+    b.addEventListener('click', function () { go(idx); });
+    chaptersWrap.appendChild(b);
+    return b;
+  });
+
+  totalEl.textContent = String(N).padStart(2, '0');
+
+  // Logo-marquee op de cover ("worked with") — zelfde merken als de site, dubbel voor naadloze loop
+  var logoWrap = document.querySelector('[data-logo-marquee]');
+  if (logoWrap) {
+    var BRANDS = [
+      ['Ziggo', 'assets/logos/ziggo.png'], ['Complex', 'assets/logos/complex.png'],
+      ['Red Bull', 'assets/logos/red-bull.png'], ['Puma', 'assets/logos/puma.png'],
+      ['adidas', 'assets/logos/adidas.png'], ['Reebok', 'assets/logos/reebok.png'],
+      ['KFC', 'assets/logos/kfc.png'], ['G-Shock', 'assets/logos/gshock.png'],
+      ['Zalando', 'assets/logos/zalando.png'], ['FIFA', 'assets/logos/fifa.png'],
+      ['AFCON', 'assets/logos/afcon.png'], ['Telfaz11', 'assets/logos/telfaz.png'],
+      ['Hot Ones', 'assets/logos/hot-ones.png'], ['CONVO', 'assets/logos/convo.png']
+    ];
+    var set = BRANDS.map(function (b) {
+      return '<img src="' + b[1] + '" alt="' + b[0] + '" loading="lazy" draggable="false" />';
+    }).join('');
+    logoWrap.innerHTML = set + set;
+  }
+
+  // --- Work-carrousel (slide 5): lopende video's + links/rechts + mini-beschrijving ---
+  var WORK_INDEX = 4;
+  var carousel = document.querySelector('[data-carousel]');
+  var cTrack   = document.querySelector('[data-carousel-track]');
+  var cPrev    = document.querySelector('[data-carousel-prev]');
+  var cNext    = document.querySelector('[data-carousel-next]');
+  var cVideos  = carousel ? Array.prototype.slice.call(carousel.querySelectorAll('video')) : [];
+
+  function playSafe(v) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
+  function pauseAllVideos() { for (var j = 0; j < cVideos.length; j++) cVideos[j].pause(); }
+  function playVisibleVideos() {
+    if (!carousel) return;
+    var cr = carousel.getBoundingClientRect();
+    for (var j = 0; j < cVideos.length; j++) {
+      var r = cVideos[j].getBoundingClientRect();
+      if (r.right > cr.left + 24 && r.left < cr.right - 24) playSafe(cVideos[j]);
+      else cVideos[j].pause();
+    }
+  }
+  function cardStep() {
+    if (!cTrack || !cTrack.children.length) return 360;
+    var cs = getComputedStyle(cTrack);
+    var gap = parseFloat(cs.columnGap || cs.gap || '0') || 0;
+    return cTrack.children[0].getBoundingClientRect().width + gap;
+  }
+  function carouselScroll(dir) { if (carousel) carousel.scrollBy({ left: dir * cardStep(), behavior: 'smooth' }); }
+  function carouselAtStart() { return !carousel || carousel.scrollLeft <= 2; }
+  function carouselAtEnd() { return !carousel || carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 2; }
+  function updateCarouselArrows() { if (cPrev && cNext) { cPrev.disabled = carouselAtStart(); cNext.disabled = carouselAtEnd(); } }
+  function updateWorkPlayback() {
+    if (i === WORK_INDEX) {
+      updateCarouselArrows();
+      setTimeout(function () { if (i === WORK_INDEX) playVisibleVideos(); }, 140);
+    } else {
+      pauseAllVideos();
+    }
+  }
+
+  if (carousel) {
+    cPrev.addEventListener('click', function () { carouselScroll(-1); });
+    cNext.addEventListener('click', function () { carouselScroll(1); });
+    carousel.addEventListener('scroll', function () {
+      updateCarouselArrows();
+      if (i === WORK_INDEX) playVisibleVideos();
+    }, { passive: true });
+
+    // Sleep-to-scroll met de muis
+    var dg = false, dsx = 0, dsl = 0;
+    carousel.addEventListener('pointerdown', function (e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      dg = true; dsx = e.clientX; dsl = carousel.scrollLeft; carousel.classList.add('is-dragging');
+    });
+    window.addEventListener('pointermove', function (e) { if (dg) carousel.scrollLeft = dsl - (e.clientX - dsx); });
+    window.addEventListener('pointerup', function () { if (dg) { dg = false; carousel.classList.remove('is-dragging'); } });
+
+    // Alleen zichtbare video's spelen (scheelt CPU)
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        for (var e2 = 0; e2 < entries.length; e2++) {
+          var v = entries[e2].target;
+          if (entries[e2].isIntersecting && i === WORK_INDEX) playSafe(v);
+          else v.pause();
+        }
+      }, { root: carousel, threshold: 0.5 });
+      for (var vj = 0; vj < cVideos.length; vj++) io.observe(cVideos[vj]);
+    }
+  }
+
+  function go(n) {
+    i = Math.max(0, Math.min(N - 1, n));
+    slidesEl.style.setProperty('--i', i);
+    for (var k = 0; k < N; k++) {
+      slides[k].classList.toggle('is-active', k === i);
+      chapters[k].classList.toggle('is-active', k === i);
+      chapters[k].setAttribute('aria-selected', k === i ? 'true' : 'false');
+    }
+    curEl.textContent = String(i + 1).padStart(2, '0');
+    fillEl.style.transform = 'scaleX(' + (N > 1 ? i / (N - 1) : 1) + ')';
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === N - 1;
+    // actief hoofdstuk in beeld scrollen op smalle schermen
+    chapters[i].scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    if (history.replaceState) history.replaceState(null, '', '#slide-' + (i + 1));
+    updateWorkPlayback();
+    hideHint();
+  }
+  function next() { go(i + 1); }
+  function prev() { go(i - 1); }
+
+  prevBtn.addEventListener('click', prev);
+  nextBtn.addEventListener('click', next);
+
+  // Toetsenbord
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') {
+      if (i === WORK_INDEX && !carouselAtEnd()) { e.preventDefault(); carouselScroll(1); return; }
+      e.preventDefault(); next();
+    }
+    else if (e.key === 'ArrowLeft') {
+      if (i === WORK_INDEX && !carouselAtStart()) { e.preventDefault(); carouselScroll(-1); return; }
+      e.preventDefault(); prev();
+    }
+    else if (e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); next(); }
+    else if (e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End') { e.preventDefault(); go(N - 1); }
+    else if (e.key >= '1' && e.key <= '9') { var t = parseInt(e.key, 10) - 1; if (t < N) go(t); }
+    else if (e.key === 'f' || e.key === 'F') { toggleFs(); }
+  });
+
+  // Swipe (horizontaal) — negeer verticaal scrollen binnen een slide
+  var sx = 0, sy = 0, swiping = false;
+  var deck = document.querySelector('.deck');
+  deck.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1) return;
+    if (e.target.closest && e.target.closest('[data-carousel]')) { swiping = false; return; }
+    sx = e.touches[0].clientX; sy = e.touches[0].clientY; swiping = true;
+  }, { passive: true });
+  deck.addEventListener('touchend', function (e) {
+    if (!swiping) return; swiping = false;
+    var dx = e.changedTouches[0].clientX - sx;
+    var dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.4) { dx < 0 ? next() : prev(); }
+  }, { passive: true });
+
+  // Fullscreen
+  function toggleFs() {
+    if (!document.fullscreenElement) {
+      (document.documentElement.requestFullscreen || function(){}).call(document.documentElement);
+    } else {
+      (document.exitFullscreen || function(){}).call(document);
+    }
+  }
+  fsBtn.addEventListener('click', toggleFs);
+
+  // Hint automatisch verbergen
+  var hintT = setTimeout(hideHint, 5200);
+  function hideHint() { if (hintEl) { hintEl.classList.add('is-hidden'); clearTimeout(hintT); } }
+
+  // Startpositie uit hash (#slide-3)
+  var m = (location.hash || '').match(/slide-(\d+)/);
+  var start = m ? Math.max(0, Math.min(N - 1, parseInt(m[1], 10) - 1)) : 0;
+
+  // Init — korte tick zodat de intro-reveal afspeelt
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () { go(start); });
+  });
+})();
+</script>
+</body>
+</html>
